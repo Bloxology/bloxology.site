@@ -3,6 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { Github, X, MessageCircle } from 'lucide-react';
+import { LOGO_URL } from '@/constants';
 
 const Footer = () => {
   return (
@@ -16,7 +17,7 @@ const Footer = () => {
             <div className="space-y-4">
               <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
                 <img 
-                  src="https://horizons-cdn.hostinger.com/c39b4b4c-cce3-4597-b59b-2cc69cfe80ed/b2bd7621770a2a1eb770c2fa7581485a.png" 
+                  src={LOGO_URL} 
                   alt="Bloxology logo"
                   className="h-8 sm:h-9 w-auto"
                 />
