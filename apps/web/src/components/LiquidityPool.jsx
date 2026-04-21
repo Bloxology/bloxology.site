@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, AlertCircle, Droplets, Percent, Layers, Plus, CheckCircle } from 'lucide-react';
 import apiServerClient from '@/lib/apiServerClient.js';
+import { formatBalance } from '@/utils/formatBalance.js';
 import { useBaseAuth, useNetwork } from '@/contexts/BaseAuthContext.jsx';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,9 +61,7 @@ const LiquidityPool = () => {
   };
 
   const formatNumber = (val) => {
-    return new Intl.NumberFormat('en-US', {
-      maximumFractionDigits: 4
-    }).format(val);
+    return formatBalance(val);
   };
 
   const calculateEstimatedSlippage = () => {
@@ -202,7 +201,7 @@ const LiquidityPool = () => {
               <div className="flex justify-between items-center p-3 glass-card rounded-lg">
                 <span className="text-[var(--text-secondary)] font-medium">Ratio (T0/T1)</span>
                 <span className="font-bold text-[var(--text-primary)]">
-                  {(parseFloat(poolData.reserve0) / parseFloat(poolData.reserve1)).toFixed(4)}
+                  {(parseFloat(poolData.reserve0) / parseFloat(poolData.reserve1)).toLocaleString(undefined, { maximumFractionDigits: 9 })}
                 </span>
               </div>
               <div className="flex justify-between items-center p-3 glass-card rounded-lg">

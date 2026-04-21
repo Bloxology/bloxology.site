@@ -65,7 +65,7 @@ const DashboardPage = () => {
               </p>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mt-4">
                 <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                Connected: {displayAddress?.slice(0, 6)}...{displayAddress?.slice(-4)} ({walletType})
+                Connected: {displayAddress?.slice(0, 6)}...{displayAddress?.slice(-4)}
               </div>
             </div>
             

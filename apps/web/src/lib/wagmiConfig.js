@@ -1,10 +1,11 @@
 import { createConfig, http } from 'wagmi';
 import { mainnet, polygon, base, baseSepolia, arbitrum, optimism, sepolia } from 'wagmi/chains';
-import { metaMask, coinbaseWallet } from 'wagmi/connectors';
+import { injected, metaMask, coinbaseWallet } from 'wagmi/connectors';
 
 export const wagmiConfig = createConfig({
   chains: [base, baseSepolia, mainnet, polygon, arbitrum, optimism, sepolia],
   connectors: [
+    injected(),
     metaMask(),
     coinbaseWallet({
       appName: 'Bloxology',

@@ -1,10 +1,11 @@
 
-export const FEE_RECIPIENT = '0x5ab137b17c3584a9DeBBa742964F09F84a4A5A7C';
+export const FEE_RECIPIENT = '0xA7a6bd20FB57c43223084ad8525E24743e52C8ec';
 
 export const FEE_CONFIG = {
-  SWAP_FEE_PERCENT: 3,
-  LOCKER_FEE: 30,
-  LIQUIDITY_FEE_PERCENT: 2
+  // Temporary: disable fees until swap/quote reliability is fully validated.
+  SWAP_FEE_PERCENT: 0,
+  LOCKER_FEE: 0,
+  LIQUIDITY_FEE_PERCENT: 0
 };
 
 export const calculateSwapFee = (amount) => {

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatBalance } from '@/utils/formatBalance.js';
 import { 
   ArrowRightLeft, ArrowUpRight, ArrowDownLeft, FileCode, 
   Search, Filter, RefreshCw, History, ChevronLeft, ChevronRight 
@@ -59,6 +60,8 @@ const TransactionHistory = ({ currentNetwork, walletAddress }) => {
   };
 
   useEffect(() => {
+    setCurrentPage(1);
+    setTransactions([]);
     fetchTransactions();
 
     // Auto-refresh every 20 seconds
@@ -90,16 +93,19 @@ const TransactionHistory = ({ currentNetwork, walletAddress }) => {
   };
 
   const formatAmount = (valueEth) => {
-    if (!valueEth || valueEth === '0') return '0.00';
-    const num = parseFloat(valueEth);
-    return num < 0.0001 ? '< 0.0001' : num.toFixed(4);
+    if (!valueEth) return '0.000000';
+    const num = Number(valueEth);
+    if (!Number.isFinite(num) || num === 0) return '0.000000';
+    if (Math.abs(num) < 0.000000001) return '< 0.000000001';
+
+    return formatBalance(num);
   };
 
   const filteredTransactions = transactions.filter(tx => {
     const matchesSearch = tx.hash.toLowerCase().includes(search.toLowerCase()) || 
                           tx.to?.toLowerCase().includes(search.toLowerCase());
     
-    const txStatus = tx.isError === '1' ? 'failed' : 'success';
+    const txStatus = tx.isError === '1' || tx.isError === true ? 'failed' : 'success';
     const matchesStatus = statusFilter === 'all' || txStatus === statusFilter;
     
     return matchesSearch && matchesStatus;
@@ -201,7 +207,7 @@ const TransactionHistory = ({ currentNetwork, walletAddress }) => {
                 <AnimatePresence>
                   {paginatedTransactions.map((tx, idx) => {
                     const type = getTxType(tx);
-                    const status = tx.isError === '1' ? 'failed' : 'success';
+                    const status = tx.isError === '1' || tx.isError === true ? 'failed' : 'success';
                     
                     return (
                       <motion.tr 

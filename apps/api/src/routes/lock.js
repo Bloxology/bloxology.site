@@ -1,8 +1,11 @@
 import express from 'express';
 import { ethers } from 'ethers';
+import { createRequire } from 'module';
 import logger from '../utils/logger.js';
 
 const router = express.Router();
+const require = createRequire(import.meta.url);
+const liveLockHandler = require('../../../../api/base/lock.js');
 
 const SUPPORTED_NETWORKS = ['ethereum', 'base', 'polygon', 'kava'];
 const VALID_DURATIONS = [30, 60, 90, 180]; // days
@@ -61,7 +64,24 @@ const calculateRewards = (amount, duration) => {
   return (amount * rate).toFixed(8);
 };
 
+router.get('/', async (_req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: 'Lock endpoint is available. Use POST with either legacy or base lock payload.',
+  });
+});
+
+router.options('/', async (_req, res) => {
+  res.set('Allow', 'GET,POST,OPTIONS');
+  return res.status(204).send();
+});
+
 router.post('/', async (req, res) => {
+  // Compatibility path for clients expecting /base/lock behavior on /lock.
+  if (req.body?.tokenAddress && req.body?.unlockDate) {
+    return liveLockHandler(req, res);
+  }
+
   const { token, amount, duration, walletAddress, network } = req.body;
 
   // Validate required fields

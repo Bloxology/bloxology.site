@@ -6,6 +6,25 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { getTransactionUrl } from '@/utils/etherscanLinks.js';
 import TransactionStatusBadge from './TransactionStatusBadge.jsx';
 
+const normaliseDisplayError = (value, network) => {
+  if (!value || typeof value !== 'string') {
+    return value;
+  }
+
+  const lower = value.toLowerCase();
+  if (
+    lower.includes("failed to execute 'json' on 'response'") ||
+    lower.includes('unexpected end of json input') ||
+    lower.includes('json parse error') ||
+    lower.includes('json rpc error')
+  ) {
+    const onNetwork = network ? ` on ${network}` : '';
+    return `Your wallet's RPC returned an empty response${onNetwork}. Make sure your wallet is switched correctly and try again.`;
+  }
+
+  return value;
+};
+
 const TransactionStatus = ({ status, hash, network, message, error }) => {
   const [currentStatus, setCurrentStatus] = useState(status);
 
@@ -29,6 +48,7 @@ const TransactionStatus = ({ status, hash, network, message, error }) => {
   if (!currentStatus || currentStatus === 'idle') return null;
 
   const explorerUrl = getTransactionUrl(hash, network);
+  const displayError = normaliseDisplayError(error || message || 'An error occurred.', network);
 
   return (
     <AnimatePresence mode="wait">
@@ -53,7 +73,7 @@ const TransactionStatus = ({ status, hash, network, message, error }) => {
                 {currentStatus === 'error' && 'Transaction Failed'}
               </AlertTitle>
               <AlertDescription className="text-[var(--text-secondary)] text-sm mt-2">
-                {currentStatus === 'error' ? (error || message || 'An error occurred.') : 
+                {currentStatus === 'error' ? displayError : 
                  currentStatus === 'pending' ? (message || 'Waiting for network confirmation...') :
                  (message || 'Your transaction has been confirmed.')}
               </AlertDescription>

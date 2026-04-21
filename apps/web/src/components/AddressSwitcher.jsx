@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Check, ChevronDown, Copy, LogOut, Wallet, Loader2, Eye, Plus } from 'lucide-react';
 import { useBaseAuth } from '@/contexts/BaseAuthContext.jsx';
+import { formatBalance } from '@/utils/formatBalance.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -134,7 +135,7 @@ const AddressSwitcher = () => {
                         {truncateAddress(wallet.address)}
                       </span>
                       <span className="text-xs font-semibold text-accent">
-                        {wallet.balance} ETH
+                        {formatBalance(wallet.balance)} ETH
                       </span>
                     </div>
                   </div>

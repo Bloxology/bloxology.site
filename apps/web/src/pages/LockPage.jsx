@@ -8,6 +8,8 @@ import { useNetwork } from '@/contexts/BaseAuthContext.jsx';
 import apiServerClient from '@/lib/apiServerClient.js';
 import { toast } from 'sonner';
 import { getTransactionUrl } from '@/utils/etherscanLinks.js';
+import { getBloxologyTokensForChain } from '@/lib/bloxologyTokenList.js';
+import { formatBalance } from '@/utils/formatBalance.js';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,11 +20,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import TokenSelector from '@/components/TokenSelector.jsx';
 import TransactionStatus from '@/components/TransactionStatus.jsx';
 
-const DEFAULT_TOKENS = [
-  { symbol: 'ETH', name: 'Ethereum', address: '0x4200000000000000000000000000000000000006' },
-  { symbol: 'USDC', name: 'USD Coin', address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' },
-  { symbol: 'DAI', name: 'Dai Stablecoin', address: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb' }
-];
+const isValidTokenEntry = (token) => {
+  return Boolean(
+    token &&
+      typeof token.address === 'string' &&
+      token.address.startsWith('0x') &&
+      token.address.length === 42 &&
+      typeof token.symbol === 'string' &&
+      token.symbol.length > 0
+  );
+};
 
 const DURATIONS = [
   { days: 30, apy: '2%' },
@@ -31,11 +38,106 @@ const DURATIONS = [
   { days: 180, apy: '15%' }
 ];
 
+const normaliseWalletError = (err, networkName) => {
+  if (!err) return 'Transaction failed';
+
+  // User rejected
+  const code = err?.code ?? err?.error?.code;
+  if (code === 4001 || code === 'ACTION_REJECTED') {
+    return 'Transaction was rejected in your wallet.';
+  }
+
+  // Collect every possible string representation of the error
+  const candidates = [];
+  const addCandidate = (v) => { if (v && typeof v === 'string') candidates.push(v); };
+  addCandidate(typeof err === 'string' ? err : null);
+  addCandidate(err?.message);
+  addCandidate(err?.reason);
+  addCandidate(err?.shortMessage);
+  addCandidate(typeof err?.toString === 'function' ? err.toString() : null);
+  addCandidate(err?.data?.message);
+  addCandidate(err?.error?.message);
+  addCandidate(err?.cause?.message);
+  addCandidate(err?.data?.originalError?.message);
+  try { addCandidate(JSON.stringify(err)); } catch (_) {}
+
+  const joined = candidates.join(' | ');
+  const joinedLower = joined.toLowerCase();
+
+  if (
+    joinedLower.includes("failed to execute 'json' on 'response'") ||
+    joinedLower.includes('unexpected end of json input') ||
+    joinedLower.includes('json parse error') ||
+    joinedLower.includes('json rpc error')
+  ) {
+    return `Your wallet\'s RPC returned an empty response. Make sure your wallet is switched to ${networkName} and try again.`;
+  }
+
+  if (
+    joinedLower.includes('insufficient funds') ||
+    joinedLower.includes('insufficient eth') ||
+    joinedLower.includes('gas required exceeds allowance')
+  ) {
+    return `Insufficient ETH for gas fees on ${networkName}. Please top up your ETH balance and try again.`;
+  }
+
+  return candidates[0] || 'Transaction failed';
+};
+
+const ensureWalletOnNetwork = async (selectedNetwork) => {
+  if (!window.ethereum) return;
+
+  // Ensure wallet has authorised this session before any provider calls
+  await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+  try {
+    const desiredHex = `0x${Number(selectedNetwork.id).toString(16)}`;
+    const currentHex = await window.ethereum.request({ method: 'eth_chainId' });
+    if (currentHex?.toLowerCase() === desiredHex.toLowerCase()) return;
+
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{ chainId: desiredHex }],
+      });
+    } catch (switchErr) {
+      if (switchErr?.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: desiredHex,
+            chainName: selectedNetwork.name,
+            rpcUrls: [selectedNetwork.rpcUrl],
+            nativeCurrency: {
+              name: selectedNetwork.currencySymbol,
+              symbol: selectedNetwork.currencySymbol,
+              decimals: 18,
+            },
+            blockExplorerUrls: selectedNetwork.blockExplorer ? [selectedNetwork.blockExplorer] : [],
+          }],
+        });
+      }
+      // Non-4902 switch errors: ignore and proceed — wallet may handle internally
+    }
+  } catch (_) {
+    // eth_chainId itself can fail on some wallets — safe to proceed
+  }
+};
+
 const LockPage = () => {
   const { wallet, isConnected } = useWallet();
   const { selectedNetwork, customTokens } = useNetwork();
+  const defaultTokens = getBloxologyTokensForChain(selectedNetwork.id).filter(isValidTokenEntry);
+  const customTokensForNetwork = customTokens.filter(
+    (t) => Number(t.chainId) === Number(selectedNetwork.id) && isValidTokenEntry(t)
+  );
+  const allTokens = [...defaultTokens, ...customTokensForNetwork].filter(
+    (token, index, arr) =>
+      arr.findIndex((item) => item.address.toLowerCase() === token.address.toLowerCase()) === index
+  );
+  const fallbackTokenAddress = allTokens[0]?.address || '';
   
-  const [token, setToken] = useState(DEFAULT_TOKENS[0].address);
+  const [token, setToken] = useState(fallbackTokenAddress);
   const [amount, setAmount] = useState('');
   const [duration, setDuration] = useState('90');
   
@@ -44,7 +146,16 @@ const LockPage = () => {
   const [txError, setTxError] = useState(null);
   const [history, setHistory] = useState([]);
 
-  const allTokens = [...DEFAULT_TOKENS, ...customTokens];
+  useEffect(() => {
+    if (!token && fallbackTokenAddress) {
+      setToken(fallbackTokenAddress);
+      return;
+    }
+
+    if (token && !allTokens.find((t) => t.address.toLowerCase() === token.toLowerCase())) {
+      setToken(fallbackTokenAddress);
+    }
+  }, [token, allTokens, fallbackTokenAddress]);
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('lock_history');
@@ -66,54 +177,106 @@ const LockPage = () => {
   const handleLock = async (e) => {
     e.preventDefault();
     if (!isConnected || !wallet) return toast.error('Connect wallet first');
+    if (!token) return toast.error('No token available for this network.');
     if (!amount || parseFloat(amount) <= 0) return toast.error('Enter a valid amount');
+    if (!window.ethereum) return toast.error('No wallet extension detected. Please install MetaMask.');
 
     setTxStatus('pending');
     setTxHash(null);
     setTxError(null);
 
     try {
-      const networkName = selectedNetwork?.name.split(' ')[0].toLowerCase() || 'ethereum';
-      
-      const response = await apiServerClient.fetch('/lock', {
+      const selectedDuration = DURATIONS.find(d => d.days.toString() === duration);
+      const unlockDate = new Date(
+        Date.now() + (selectedDuration?.days || 90) * 24 * 60 * 60 * 1000
+      ).toISOString();
+
+      const response = await apiServerClient.fetch('/base/lock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token,
-          amount,
-          duration: parseInt(duration),
           walletAddress: wallet,
-          network: networkName
+          tokenAddress: token,
+          amount,
+          unlockDate,
+          chainId: selectedNetwork.id,
         })
       });
 
-      const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to lock tokens');
+      let data;
+      try {
+        const text = await response.text();
+        data = text ? JSON.parse(text) : null;
+      } catch (_) {
+        data = null;
+      }
 
-      setTxStatus('pending'); // Will auto-transition to success in TransactionStatus component
-      setTxHash(data.transactionHash);
-      
-      const tokenSymbol = allTokens.find(t => t.address === token)?.symbol || 'Tokens';
-      
+      if (!data) {
+        throw new Error('Server returned an empty or invalid response. Make sure the API server is running and try again.');
+      }
+
+      if (!response.ok || !data.success) throw new Error(data.error || 'Failed to prepare lock transaction');
+
+      const { transaction, lockDetails } = data.data;
+
+      await ensureWalletOnNetwork(selectedNetwork);
+
+      // Pre-flight: check ETH balance covers gas (0.00005 ETH minimum on Base)
+      try {
+        const MIN_GAS_WEI = BigInt('50000000000000'); // 0.00005 ETH
+        const balHex = await window.ethereum.request({ method: 'eth_getBalance', params: [wallet, 'latest'] });
+        const balWei = BigInt(balHex);
+        if (balWei < MIN_GAS_WEI) {
+          const balEth = formatBalance(Number(balWei) / 1e18);
+          throw new Error(`Insufficient ETH for gas fees. You have ${balEth} ETH on ${selectedNetwork.name} but need at least 0.00005 ETH to send this transaction.`);
+        }
+      } catch (balErr) {
+        if (balErr.message?.startsWith('Insufficient ETH')) throw balErr;
+        // eth_getBalance unavailable — skip check and proceed
+      }
+
+      let txHashResult;
+      try {
+        txHashResult = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from: wallet,
+            to: transaction.to,
+            data: transaction.data,
+            value: transaction.value,
+          }],
+        });
+      } catch (walletErr) {
+        throw new Error(normaliseWalletError(walletErr, selectedNetwork.name));
+      }
+
+      if (!txHashResult) throw new Error('Wallet did not return a transaction hash.');
+
+      setTxStatus('success');
+      setTxHash(txHashResult);
+
+      const tokenSymbol = allTokens.find(t => t.address?.toLowerCase() === token?.toLowerCase())?.symbol || 'Tokens';
+
       saveToHistory({
-        id: data.lockId || Date.now(),
+        id: Date.now(),
         type: 'Lock',
-        details: `Locked ${amount} ${tokenSymbol} for ${duration} days`,
-        rewards: data.rewards,
-        unlockDate: data.unlockDate,
-        hash: data.transactionHash,
+        details: `Locked ${lockDetails.amount} ${lockDetails.symbol} for ${selectedDuration?.days || 90} days`,
+        rewards: selectedDuration?.apy || '0%',
+        unlockDate: lockDetails.unlockDate,
+        hash: txHashResult,
         date: new Date().toISOString(),
         network: selectedNetwork.name,
         status: 'locked'
       });
 
-      toast.success('Token lock transaction submitted!');
+      toast.success('Tokens locked successfully!');
       setAmount('');
 
     } catch (err) {
+      const readableError = normaliseWalletError(err, selectedNetwork.name);
       setTxStatus('error');
-      setTxError(err.message);
-      toast.error(err.message);
+      setTxError(readableError);
+      toast.error(readableError);
     }
   };
 
@@ -123,7 +286,7 @@ const LockPage = () => {
     if (!selectedDuration) return '0.00';
     const apyNum = parseFloat(selectedDuration.apy);
     // Simple mock calculation for UI
-    return ((parseFloat(amount) * apyNum) / 100).toFixed(4);
+    return ((parseFloat(amount) * apyNum) / 100).toLocaleString(undefined, { maximumFractionDigits: 9 });
   };
 
   return (

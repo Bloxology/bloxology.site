@@ -10,12 +10,17 @@
     "dev": "concurrently --kill-others --raw \"npm run dev --workspace web\" \"npm run dev --workspace api\"",
     "build": "npm run build --workspace web",
     "start": "node apps/api/src/main.js",
-    "lint": "concurrently --raw \"npm run lint --workspace web\" \"npm run lint --workspace api\""
+    "lint": "concurrently --raw \"npm run lint --workspace web\" \"npm run lint --workspace api\"",
+    "odos:quote": "node scripts/odos-quote-example.mjs",
+    "odos:quote:prod": "node --env-file=env.production scripts/odos-quote-example.mjs"
   },
   "workspaces": [
     "apps/*"
   ],
   "overrides": {
     "glob": "^10.6.0"
+  },
+  "devDependencies": {
+    "flow-bin": "^0.308.0"
   }
 }

@@ -18,11 +18,22 @@ const WalletConnectorWagmi = ({ onSuccess }) => {
   const handleConnectWallet = async (walletConnector) => {
     clearError();
     setLocalError(null);
+
+    // If wallet is already connected, proceed directly to ownership signature.
+    if (isConnected && address) {
+      setNeedsSignature(true);
+      return;
+    }
+
     try {
       await connectAsync({ connector: walletConnector });
       setNeedsSignature(true);
     } catch (err) {
       const message = err?.message || 'Failed to connect wallet';
+      if (message.toLowerCase().includes('already connected')) {
+        setNeedsSignature(true);
+        return;
+      }
       if (message.toLowerCase().includes('provider not found') || message.toLowerCase().includes('connector not found')) {
         setLocalError('No wallet provider detected in this browser. Open the site in MetaMask/Coinbase Wallet browser, or install the extension and refresh.');
       } else {
@@ -78,7 +89,6 @@ const WalletConnectorWagmi = ({ onSuccess }) => {
         onSignatureSuccess={handleSignatureSuccess}
         onCancel={() => {
           setNeedsSignature(false);
-          setSelectedWallet(null);
         }}
       />
     );
@@ -114,7 +124,9 @@ const WalletConnectorWagmi = ({ onSuccess }) => {
             </div>
             <div className="flex-1">
               <h3 className="font-bold text-[var(--text-primary)]">{connector.name}</h3>
-              <p className="text-sm text-[var(--text-secondary)]">Connect using {connector.name}</p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                {connector.name === 'Injected' ? 'Connect using browser wallet extension' : `Connect using ${connector.name}`}
+              </p>
             </div>
             {isPending && (
               <Loader2 className="h-5 w-5 animate-spin text-primary" />

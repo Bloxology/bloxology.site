@@ -70,7 +70,12 @@
     "vaul": "^1.1.2",
     "viem": "^2.47.6",
     "wagmi": "^2.19.5",
-    "zod": "^4.3.6"
+    "zod": "^4.3.6",
+    "@vitejs/plugin-react": "^5.1.4",
+    "vite": "^7.3.2",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17"
   },
   "devDependencies": {
     "@babel/generator": "^7.26.3",
@@ -80,18 +85,13 @@
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@vitejs/plugin-react": "^5.1.4",
-    "autoprefixer": "^10.4.20",
     "eslint": "^9.24.0",
     "eslint-import-resolver-alias": "^1.1.2",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react": "^7.37.3",
     "eslint-plugin-react-hooks": "^5.2.0",
     "globals": "^15.14.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "terser": "^5.37.0",
-    "vite": "^7.3.1"
+    "terser": "^5.37.0"
   },
   "overrides": {
     "glob": "^10.6.0"

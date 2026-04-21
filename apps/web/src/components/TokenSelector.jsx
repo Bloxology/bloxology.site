@@ -3,8 +3,31 @@ import React, { useState, useMemo } from 'react';
 import { ChevronDown, Search, Coins } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
+import { formatBalance } from '@/utils/formatBalance.js';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+const TokenAvatar = ({ token, className = 'w-8 h-8' }) => {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasLogo = Boolean(token.logoURI) && !imageFailed;
+
+  if (hasLogo) {
+    return (
+      <img
+        src={token.logoURI}
+        alt={`${token.symbol} logo`}
+        onError={() => setImageFailed(true)}
+        className={cn(className, 'rounded-full object-cover border border-border/30 bg-background/40')}
+      />
+    );
+  }
+
+  return (
+    <div className={cn(className, 'rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold')}>
+      {token.symbol.charAt(0)}
+    </div>
+  );
+};
 
 const TokenSelector = ({ selectedToken, onTokenChange, tokens = [], disabled, label = "Select Token" }) => {
   const [open, setOpen] = useState(false);
@@ -34,9 +57,7 @@ const TokenSelector = ({ selectedToken, onTokenChange, tokens = [], disabled, la
         >
           {selectedTokenData ? (
             <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs">
-                {selectedTokenData.symbol.charAt(0)}
-              </div>
+              <TokenAvatar token={selectedTokenData} className="w-6 h-6" />
               {selectedTokenData.symbol}
             </div>
           ) : (
@@ -80,9 +101,7 @@ const TokenSelector = ({ selectedToken, onTokenChange, tokens = [], disabled, la
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                    {token.symbol.charAt(0)}
-                  </div>
+                  <TokenAvatar token={token} />
                   <div className="flex flex-col">
                     <span className="font-bold text-[var(--text-primary)] leading-none mb-1">{token.symbol}</span>
                     <span className="text-xs text-[var(--text-muted)]">{token.name || 'Token'}</span>
@@ -90,7 +109,7 @@ const TokenSelector = ({ selectedToken, onTokenChange, tokens = [], disabled, la
                 </div>
                 {token.balance && (
                   <div className="text-right flex flex-col">
-                    <span className="font-medium text-[var(--text-primary)]">{token.balance}</span>
+                    <span className="font-medium text-[var(--text-primary)]">{formatBalance(token.balance)}</span>
                   </div>
                 )}
               </button>

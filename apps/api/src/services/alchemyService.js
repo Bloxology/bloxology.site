@@ -70,7 +70,7 @@ const getTokenBalances = async (address, chainId) => {
 
     const result = nonZero.map((t, i) => {
       const meta = metadataResults[i] || {};
-      const decimals = meta.decimals || 18;
+      const decimals = Number.isFinite(meta.decimals) && meta.decimals >= 0 ? meta.decimals : 18;
       const rawBalance = BigInt(t.tokenBalance);
       const divisor = BigInt(10) ** BigInt(decimals);
       const whole = rawBalance / divisor;

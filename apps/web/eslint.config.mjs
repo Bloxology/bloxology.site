@@ -43,6 +43,7 @@ export default [
 			'no-undef': 'error', // Undefined variables cause runtime errors
 
 			// Override recommended import rules for stricter checking
+				'import/no-unresolved': 'off', // Workspace is under Desktop; resolver case-checks can fail with EPERM and make lint unusable
 			'import/no-self-import': 'error', // Extremely fast rule, breaking results in infinite loop/bundling error
 
 			// Disable expensive rules for performance

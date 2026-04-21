@@ -159,7 +159,7 @@ const SettingsPage = () => {
                     <>
                       <div className="glass-card p-4 rounded-lg space-y-2">
                         <p className="text-sm text-[var(--text-secondary)] font-medium">Connected Address</p>
-                        <p className="font-mono text-sm break-all text-[var(--text-primary)]">{connectedWallet.address}</p>
+                        <p className="font-mono text-sm break-all text-[var(--text-primary)]">{connectedWallet}</p>
                         <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)] font-medium">
                           <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
                           <span>Active</span>

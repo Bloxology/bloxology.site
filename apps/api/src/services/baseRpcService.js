@@ -4,10 +4,10 @@ import NodeCache from 'node-cache';
 import logger from '../utils/logger.js';
 import { RPC_ENDPOINTS, CHAIN_ID_TO_RPC_KEY } from '../constants/common.js';
 
-const RPC_ENDPOINT = process.env.BASE_RPC_ENDPOINT;
+const RPC_ENDPOINT = process.env.BASE_RPC_ENDPOINT || RPC_ENDPOINTS.base;
 
 if (!RPC_ENDPOINT) {
-  throw new Error('BASE_RPC_ENDPOINT is not defined in environment variables');
+  logger.warn('BASE_RPC_ENDPOINT is not defined — using public fallback');
 }
 
 // Initialize cache with different TTLs
@@ -171,7 +171,8 @@ const fetchTokenBalance = async (walletAddress, tokenAddress) => {
       'latest',
     ]);
 
-    const decimals = parseInt(decimalsData, 16);
+    const parsedDecimals = parseInt(decimalsData, 16);
+    const decimals = Number.isFinite(parsedDecimals) ? parsedDecimals : 18;
 
     // Get symbol
     const symbolData = await makeRpcCall('eth_call', [
@@ -201,7 +202,20 @@ const fetchTokenBalance = async (walletAddress, tokenAddress) => {
       'latest',
     ]);
 
-    const balance = (BigInt(balanceData) / BigInt(10 ** decimals)).toString();
+    let rawBalance = BigInt(balanceData);
+
+    // For WETH addresses, also include native ETH balance
+    const WETH_ADDRS = ['0x4200000000000000000000000000000000000006', '0xc02aa39b223fe8d0a0e5c4f27ead9083c756cc2'];
+    if (WETH_ADDRS.includes(tokenAddress.toLowerCase())) {
+      const nativeBalanceData = await makeRpcCall('eth_getBalance', [walletAddress, 'latest']);
+      rawBalance += BigInt(nativeBalanceData);
+    }
+
+    const divisor = BigInt(10) ** BigInt(decimals);
+    const whole = rawBalance / divisor;
+    const remainder = rawBalance % divisor;
+    const fractionStr = remainder.toString().padStart(decimals, '0');
+    const balance = `${whole}.${fractionStr}`;
 
     const result = {
       balance,
@@ -238,7 +252,8 @@ const fetchTokenPrice = async (tokenAddress) => {
       'latest',
     ]);
 
-    const decimals = parseInt(decimalsData, 16);
+    const parsedDecimals = parseInt(decimalsData, 16);
+    const decimals = Number.isFinite(parsedDecimals) ? parsedDecimals : 18;
 
     const symbolData = await makeRpcCall('eth_call', [
       {
