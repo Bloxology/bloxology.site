@@ -1,6 +1,12 @@
 import { createConfig, http } from 'wagmi';
 import { mainnet, polygon, base, baseSepolia, arbitrum, optimism, sepolia } from 'wagmi/chains';
 import { injected, metaMask, coinbaseWallet } from 'wagmi/connectors';
+import { Attribution } from 'ox/erc8021';
+
+// Get your Builder Code from base.dev > Settings > Builder Codes
+const DATA_SUFFIX = Attribution.toDataSuffix({
+  codes: [import.meta.env.VITE_BASE_BUILDER_CODE ?? ''],
+});
 
 export const wagmiConfig = createConfig({
   chains: [base, baseSepolia, mainnet, polygon, arbitrum, optimism, sepolia],
@@ -20,4 +26,5 @@ export const wagmiConfig = createConfig({
     [optimism.id]: http('https://mainnet.optimism.io'),
     [sepolia.id]: http('https://rpc.sepolia.org'),
   },
+  dataSuffix: DATA_SUFFIX,
 });
