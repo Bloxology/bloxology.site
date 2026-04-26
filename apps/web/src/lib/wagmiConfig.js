@@ -3,10 +3,12 @@ import { mainnet, polygon, base, baseSepolia, arbitrum, optimism, sepolia } from
 import { injected, metaMask, coinbaseWallet } from 'wagmi/connectors';
 import { Attribution } from 'ox/erc8021';
 
-// Get your Builder Code from base.dev > Settings > Builder Codes
-const DATA_SUFFIX = Attribution.toDataSuffix({
-  codes: [import.meta.env.VITE_BASE_BUILDER_CODE ?? ''],
-});
+// Appends ERC-8021 attribution data to all transactions for Base builder code tracking.
+// Set VITE_BASE_BUILDER_CODE to your code from base.dev > Settings > Builder Codes.
+const builderCode = import.meta.env.VITE_BASE_BUILDER_CODE;
+const DATA_SUFFIX = builderCode
+  ? Attribution.toDataSuffix({ codes: [builderCode] })
+  : undefined;
 
 export const wagmiConfig = createConfig({
   chains: [base, baseSepolia, mainnet, polygon, arbitrum, optimism, sepolia],
@@ -26,5 +28,5 @@ export const wagmiConfig = createConfig({
     [optimism.id]: http('https://mainnet.optimism.io'),
     [sepolia.id]: http('https://rpc.sepolia.org'),
   },
-  dataSuffix: DATA_SUFFIX,
+  ...(DATA_SUFFIX && { dataSuffix: DATA_SUFFIX }),
 });
