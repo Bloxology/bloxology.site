@@ -3,6 +3,8 @@ const { formatUnits, getUsdPrice, getErc20Balance, CHAIN_ID_TO_COINGECKO_PLATFOR
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const UNISWAP_API_KEY = process.env.UNISWAP_API_KEY;
 const ODOS_API_KEY = process.env.ODOS_API_KEY;
+const LIFI_API_BASE = 'https://li.quest/v1';
+const LIFI_INTEGRATOR = 'blockscout';
 const SWAP_FEE_BPS = 40;
 const NATIVE_TOKEN_ALIAS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const ODOS_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
@@ -145,6 +147,90 @@ const requestAlchemyQuote = async (quoteParams) => {
   }
 
   return payload.result;
+};
+
+const fetchLifiQuote = async ({ fromAddress, fromToken, toToken, amount, chainId }) => {
+  const fromTokenLower = fromToken.toLowerCase();
+  const toTokenLower = toToken.toLowerCase();
+  const fromDecimals = TOKEN_DECIMALS[fromTokenLower] ?? 18;
+  const toDecimals = TOKEN_DECIMALS[toTokenLower] ?? 18;
+  const fromAmountRaw = toAmountRaw(amount, fromDecimals).toString();
+
+  // LI.FI uses the native alias for ETH on all chains
+  const lifiFromToken = isWrappedNative(fromToken, chainId) ? NATIVE_TOKEN_ALIAS : fromToken;
+  const lifiToToken = isWrappedNative(toToken, chainId) ? NATIVE_TOKEN_ALIAS : toToken;
+
+  const params = new URLSearchParams({
+    fromChain: String(Number(chainId)),
+    toChain: String(Number(chainId)),
+    fromToken: lifiFromToken,
+    toToken: lifiToToken,
+    fromAmount: fromAmountRaw,
+    slippage: '0.005',
+    integrator: LIFI_INTEGRATOR,
+  });
+
+  if (fromAddress) {
+    params.set('fromAddress', fromAddress);
+  }
+
+  const quoteResponse = await fetch(`${LIFI_API_BASE}/quote?${params.toString()}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+
+  const quotePayload = await quoteResponse.json().catch(() => ({}));
+  if (!quoteResponse.ok) {
+    throw new Error(quotePayload?.message || `LI.FI quote request failed: ${quoteResponse.status}`);
+  }
+
+  const txRequest = quotePayload?.transactionRequest;
+  if (!txRequest || !txRequest.to || !txRequest.data) {
+    throw new Error('LI.FI quote did not return executable transactionRequest');
+  }
+
+  const toAmountRawValue = quotePayload?.estimate?.toAmount
+    || quotePayload?.estimate?.toAmountMin
+    || quotePayload?.toAmount;
+
+  let outputAmount = '0';
+  if (toAmountRawValue) {
+    try {
+      outputAmount = formatUnits(BigInt(String(toAmountRawValue)), toDecimals, 9);
+    } catch (_) {
+      outputAmount = '0';
+    }
+  }
+
+  const exchangeRate = Number(amount) > 0 && Number(outputAmount) > 0
+    ? Number(outputAmount) / Number(amount)
+    : 0;
+
+  return {
+    outputAmount,
+    feeAmount: '0',
+    netOutputAmount: outputAmount,
+    exchangeRate: Number.isFinite(exchangeRate) ? exchangeRate.toFixed(9) : '0',
+    gasFee: '0',
+    slippage: '0.50',
+    fromUsd: null,
+    toUsd: null,
+    estimatedGasUsd: null,
+    pricing: {
+      fromTokenSource: 'lifi-quote',
+      toTokenSource: 'lifi-quote',
+    },
+    provider: 'lifi',
+    execution: {
+      type: 'transaction',
+      transaction: {
+        to: txRequest.to,
+        data: txRequest.data,
+        value: txRequest.value || '0x0',
+        gasLimit: txRequest.gasLimit || txRequest.gas,
+      },
+    },
+  };
 };
 
 const fetchOdosQuote = async ({ fromAddress, fromToken, toToken, amount, chainId }) => {
@@ -457,7 +543,39 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      // --- Primary: ODOS (reliable, works without special API plan) ---
+      // --- Primary: LI.FI / Blockscout swap API ---
+      const lifiRetryErrors = [];
+      for (const bps of retryBpsSteps) {
+        const retryAmount = buildRetryAmount(bps);
+        if (!retryAmount) continue;
+        try {
+          const lifiQuote = await fetchLifiQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId });
+          if (lifiQuote) {
+            return json(res, 200, {
+              success: true,
+              data: {
+                ...lifiQuote,
+                requestedAmount: amount,
+                adjustedAmount: retryAmount,
+                autoAdjusted: retryAmount !== amount,
+              },
+              error: null,
+            });
+          }
+        } catch (lifiError) {
+          lifiRetryErrors.push(`LI.FI ${retryAmount}: ${String(lifiError?.message || lifiError)}`);
+        }
+      }
+      console.error('[token-swap-quote] lifi primary failed', {
+        requestId,
+        chainId: Number(chainId),
+        fromToken,
+        toToken,
+        amount,
+        errors: lifiRetryErrors,
+      });
+
+      // --- Fallback: ODOS ---
       const odosRetryErrors = [];
       for (const bps of retryBpsSteps) {
         const retryAmount = buildRetryAmount(bps);
@@ -480,7 +598,7 @@ module.exports = async function handler(req, res) {
           odosRetryErrors.push(`ODOS ${retryAmount}: ${String(odosError?.message || odosError)}`);
         }
       }
-      console.error('[token-swap-quote] odos primary failed', {
+      console.error('[token-swap-quote] odos fallback failed', {
         requestId,
         chainId: Number(chainId),
         fromToken,
@@ -527,8 +645,9 @@ module.exports = async function handler(req, res) {
         success: false,
         data: null,
         errorCode: 'EXECUTION_UNAVAILABLE',
-        error: `No executable route for this token pair and amount right now. Try a different amount or token pair. Ref: ${requestId}. ${odosRetryErrors.length ? `ODOS attempts: ${odosRetryErrors.join(' | ')}.` : ''} ${alchemyRetryErrors.length ? `Alchemy attempts: ${alchemyRetryErrors.join(' | ')}.` : ''}`,
+        error: `No executable route for this token pair and amount right now. Try a different amount or token pair. Ref: ${requestId}. ${lifiRetryErrors.length ? `LI.FI attempts: ${lifiRetryErrors.join(' | ')}.` : ''} ${odosRetryErrors.length ? `ODOS attempts: ${odosRetryErrors.join(' | ')}.` : ''} ${alchemyRetryErrors.length ? `Alchemy attempts: ${alchemyRetryErrors.join(' | ')}.` : ''}`,
         providerErrors: {
+          lifi: lifiRetryErrors,
           odos: odosRetryErrors,
           alchemy: alchemyRetryErrors,
         },
