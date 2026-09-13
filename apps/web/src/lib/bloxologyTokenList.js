@@ -194,3 +194,52 @@ export const getBloxologyTokensForChain = (chainId) => {
 
   return BLOXOLOGY_TOKENS_BY_CHAIN[8453];
 };
+
+
+export const BLOXOLOGY_LISTING_METADATA = {
+  projectName: 'Bloxology',
+  status: 'pending-submission',
+  primaryNetwork: {
+    chainId: 8453,
+    name: 'Base',
+    rpcUrl: 'https://mainnet.base.org',
+    status: 'pending-verification',
+  },
+  platformChecklists: {
+    oneInch: {
+      status: 'pending',
+      notes: 'Verify router compatibility and final Base trade paths before external submission.',
+    },
+    kyberSwap: {
+      status: 'pending',
+      notes: 'Confirm final routing metadata and token contract addresses on Base.',
+    },
+    coinGecko: {
+      status: 'pending',
+      notes: 'Collect verified contract data and public project metadata for review.',
+    },
+    dexscreener: {
+      status: 'pending',
+      notes: 'Prepare token metadata and verified marketplace data for listing review.',
+    },
+  },
+  contractAddresses: {
+    weth: '0x4200000000000000000000000000000000000006',
+    usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+    dai: '0x50c5725949A6F0c72E6C4a641F24049A917DB0Cb',
+    usdt: '0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2',
+    magb: '0xfe91f7ef81ec8ae07ba563a76943caf52df3bfa9',
+    plei: '0x10cfae91f373917eca57ccc3add7016fca132f22',
+    tosh: '0xac1bd2486aaf3b5c0fc3fd868558b082a531b2b4',
+    blush: '0x0deb1ce15254d6b6cf261b3effeeda7889150fe2',
+    alb: '0x1dd2d631c92b1acdfcdd51a0f7145a50130050c4',
+    meow: '0x7e067aa42503a9acdfbce1ead8bbbc13c6ff8453',
+  },
+  router: {
+    base: {
+      address: 'TBD',
+      status: 'pending-verification',
+      notes: 'Set to the final production router once the live swap route and verification have been completed.',
+    },
+  },
+};
