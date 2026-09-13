@@ -115,6 +115,48 @@ const parseRawAmount = (value) => {
   }
   if (/^[0-9]+$/.test(String(value))) {
     return BigInt(String(value));
+
+  const enrichQuoteMetrics = async ({ quote, amount, fromToken, toToken, chainId }) => {
+    const platform = CHAIN_ID_TO_COINGECKO_PLATFORM[Number(chainId)] || 'base';
+    const nativeAddress = Number(chainId) === 1
+      ? '0xc02aa39b223fe8d0a0e5c4f27ead9083c756cc2'
+      : '0x4200000000000000000000000000000000000006';
+
+    try {
+      const [fromPrice, toPrice, nativePrice] = await Promise.all([
+        getUsdPrice(fromToken, platform),
+        getUsdPrice(toToken, platform),
+        getUsdPrice(nativeAddress, platform),
+      ]);
+      const inputUsd = Number(amount) * fromPrice.value;
+      const outputUsd = Number(quote.outputAmount || 0) * toPrice.value;
+      const priceImpact = inputUsd > 0 && outputUsd >= 0
+        ? Math.max(0, (1 - (outputUsd / inputUsd)) * 100)
+        : Number(quote.slippage || 0);
+      const transaction = quote.execution?.transaction;
+      const gasUnits = Number(transaction?.gas || transaction?.gasLimit);
+      const gasPriceWei = Number(transaction?.gasPrice);
+      const estimatedGasEth = Number.isFinite(gasUnits) && Number.isFinite(gasPriceWei) && gasPriceWei > 0
+        ? (gasUnits * gasPriceWei) / 1e18
+        : 0.00015;
+
+      return {
+        ...quote,
+        gasFee: estimatedGasEth.toFixed(6),
+        priceImpact: priceImpact.toFixed(2),
+        slippage: priceImpact.toFixed(2),
+        fromUsd: fromPrice.value,
+        toUsd: toPrice.value,
+        estimatedGasUsd: Number((estimatedGasEth * nativePrice.value).toFixed(2)),
+        pricing: {
+          fromTokenSource: fromPrice.source,
+          toTokenSource: toPrice.source,
+        },
+      };
+    } catch (_) {
+      return quote;
+    }
+  };
   }
   return null;
 };
@@ -465,10 +507,17 @@ module.exports = async function handler(req, res) {
         try {
           const odosQuote = await fetchOdosQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId });
           if (odosQuote) {
+            const enrichedQuote = await enrichQuoteMetrics({
+              quote: odosQuote,
+              amount: retryAmount,
+              fromToken,
+              toToken,
+              chainId,
+            });
             return json(res, 200, {
               success: true,
               data: {
-                ...odosQuote,
+                ...enrichedQuote,
                 requestedAmount: amount,
                 adjustedAmount: retryAmount,
                 autoAdjusted: retryAmount !== amount,
@@ -498,10 +547,17 @@ module.exports = async function handler(req, res) {
           try {
             const alchemyQuote = await fetchAlchemyQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId });
             if (alchemyQuote) {
+              const enrichedQuote = await enrichQuoteMetrics({
+                quote: alchemyQuote,
+                amount: retryAmount,
+                fromToken,
+                toToken,
+                chainId,
+              });
               return json(res, 200, {
                 success: true,
                 data: {
-                  ...alchemyQuote,
+                  ...enrichedQuote,
                   requestedAmount: amount,
                   adjustedAmount: retryAmount,
                   autoAdjusted: retryAmount !== amount,
@@ -570,6 +626,7 @@ module.exports = async function handler(req, res) {
         netOutputAmount: (netOutput - feeAmount).toFixed(6),
         exchangeRate: exchangeRate.toFixed(6),
         gasFee: estimatedGasEth.toFixed(6),
+        priceImpact: priceImpactPercent.toFixed(2),
         slippage: priceImpactPercent.toFixed(2),
         fromUsd: fromPrice.value,
         toUsd: toPrice.value,

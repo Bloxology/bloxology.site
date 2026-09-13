@@ -28,6 +28,13 @@ const ERC20_ABI = [
 
 const QUOTE_FALLBACK_ADDRESS = '0x000000000000000000000000000000000000dEaD';
 
+const formatUsd = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue)
+    ? `$${numericValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    : '$0.00';
+};
+
 const isValidTokenEntry = (token) => {
   return Boolean(
     token &&
@@ -413,6 +420,7 @@ const TokenSwap = () => {
   };
 
   const toTokenSymbol = availableTokens.find(t => t.address.toLowerCase() === toToken.toLowerCase())?.symbol || '';
+  const fromTokenSymbol = availableTokens.find(t => t.address.toLowerCase() === fromToken.toLowerCase())?.symbol || '';
   // Temporary: fees are disabled until swap routing stability is fully validated.
   const feeAmount = 0;
   const netOutput = quote ? Number(quote.outputAmount ?? 0) : 0;
@@ -422,6 +430,17 @@ const TokenSwap = () => {
     && Number.isFinite(parsedAmount)
     && parsedAmount > 0
     && parsedAmount > parsedBalance;
+  const outputUsd = quote ? netOutput * Number(quote.toUsd || 0) : 0;
+  const inputUsd = parsedAmount * Number(quote?.fromUsd || 0);
+  const priceImpact = Number(quote?.priceImpact ?? quote?.slippage ?? 0);
+  const isValidated = Boolean(
+    activeAddress && amount && quote?.execution && !loadingQuote && !error && !hasInsufficientBalance
+  );
+
+  const setAmountPercentage = (percentage) => {
+    const nextAmount = parsedBalance * percentage;
+    setAmount(nextAmount > 0 ? String(nextAmount) : '');
+  };
 
   const copyDebugReport = async () => {
     const payload = {
@@ -536,23 +555,29 @@ const TokenSwap = () => {
                   ) : (
                     <>
                       <span className="text-xs text-[var(--text-secondary)]">
-                        Balance: {Number.isFinite(parsedBalance)
-                          ? formatBalance(parsedBalance)
-                          : '0'}
+                        Balance: {Number.isFinite(parsedBalance) ? formatBalance(parsedBalance) : '0'} {fromTokenSymbol}
                       </span>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setAmount(String(fromTokenBalance ?? '0'))}
-                        className="h-6 px-2 text-xs font-semibold text-primary hover:bg-primary/10"
-                      >
-                        Max
-                      </Button>
                     </>
                   )}
                 </div>
               </div>
+              {!loadingBalance && (
+                <div className="flex gap-2">
+                  {[['25%', 0.25], ['50%', 0.5], ['Max', 1]].map(([label, percentage]) => (
+                    <Button
+                      key={label}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!activeAddress || parsedBalance <= 0}
+                      onClick={() => setAmountPercentage(percentage)}
+                      className="h-7 flex-1 px-2 text-xs font-semibold"
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              )}
               {balanceUnavailable && (
                 <p className="text-[11px] text-amber-300">Balance check unavailable. Showing 0 until RPC responds.</p>
               )}
@@ -610,9 +635,14 @@ const TokenSwap = () => {
                   {loadingQuote ? (
                     <Loader2 className="h-6 w-6 animate-spin text-[var(--text-secondary)]" />
                   ) : (
-                    <span className="text-3xl font-bold text-[var(--text-primary)]">
-                      {quote ? formatBalance(quote.outputAmount) : '0.0'}
-                    </span>
+                    <div>
+                      <span className="text-3xl font-bold text-[var(--text-primary)]">
+                        {quote ? formatBalance(quote.outputAmount) : '0.0'}
+                      </span>
+                      {quote?.toUsd > 0 && (
+                        <p className="text-xs text-[var(--text-secondary)]">{formatUsd(outputUsd)}</p>
+                      )}
+                    </div>
                   )}
                 </div>
                 <Select value={toToken} onValueChange={setToToken}>
@@ -688,18 +718,28 @@ const TokenSwap = () => {
                 <div className="space-y-2 px-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--text-secondary)] font-medium">Exchange Rate</span>
-                    <span className="text-[var(--text-primary)] font-medium">1 = {quote.exchangeRate}</span>
+                    <span className="text-[var(--text-primary)] font-medium">
+                      1 {fromTokenSymbol} = {quote.exchangeRate} {toTokenSymbol}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--text-secondary)] font-medium">Network Fee</span>
-                    <span className="text-[var(--text-primary)] font-medium">{quote.gasFee} ETH</span>
+                    <span className="text-[var(--text-primary)] font-medium">
+                      {quote.gasFee} ETH {quote.estimatedGasUsd != null && `(${formatUsd(quote.estimatedGasUsd)})`}
+                    </span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-[var(--text-secondary)] font-medium">Price Impact</span>
-                    <span className={`font-medium ${quote.slippage > 1 ? 'text-destructive' : 'text-accent'}`}>
-                      {quote.slippage}%
+                    <span className={`font-medium ${priceImpact > 1 ? 'text-destructive' : 'text-accent'}`}>
+                      {priceImpact.toFixed(2)}%
                     </span>
                   </div>
+                  {quote.fromUsd > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[var(--text-secondary)] font-medium">You pay</span>
+                      <span className="text-[var(--text-primary)] font-medium">{formatUsd(inputUsd)}</span>
+                    </div>
+                  )}
                   {(quote?.pricing?.fromTokenSource === 'coingecko-contract' || quote?.pricing?.toTokenSource === 'coingecko-contract') && (
                     <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-3 py-2">
                       <p className="text-xs font-semibold text-amber-300">Estimated pricing is being used for one or both tokens.</p>
@@ -775,13 +815,15 @@ const TokenSwap = () => {
               ) : !amount ? (
                 'Enter an amount'
               ) : hasInsufficientBalance ? (
-                'Insufficient balance'
+                'Insufficient ETH Balance'
               ) : error ? (
                 'Quote unavailable'
               ) : loadingQuote ? (
                 'Getting quote...'
+              ) : isValidated ? (
+                'Approve & Swap'
               ) : (
-                'Swap'
+                'Enter an amount'
               )}
             </Button>
           </form>
