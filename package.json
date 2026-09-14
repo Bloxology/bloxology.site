@@ -11,6 +11,7 @@
     "build": "npm run build --workspace web",
     "start": "node apps/api/src/main.js",
     "lint": "concurrently --raw \"npm run lint --workspace web\" \"npm run lint --workspace api\"",
+    "test": "echo \"No tests defined\"",
     "odos:quote": "node scripts/odos-quote-example.mjs",
     "odos:quote:prod": "node --env-file=env.production scripts/odos-quote-example.mjs"
   },
