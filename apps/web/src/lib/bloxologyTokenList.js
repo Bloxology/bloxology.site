@@ -237,7 +237,7 @@ export const BLOXOLOGY_LISTING_METADATA = {
   },
   router: {
     base: {
-      address: 'not-published',
+      address: null,
       addressPublished: false,
       status: 'externally-managed',
       notes: 'Base swap routing is active through verified external aggregator integrations, and this repository does not publish a dedicated Bloxology-owned router contract address.',
