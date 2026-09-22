@@ -237,9 +237,10 @@ export const BLOXOLOGY_LISTING_METADATA = {
   },
   router: {
     base: {
-      address: null,
-      status: 'active',
-      notes: 'Base swap routing is active through the verified external aggregator integration tracked for issue #24.',
+      address: 'not-published',
+      addressPublished: false,
+      status: 'externally-managed',
+      notes: 'Base swap routing is active through verified external aggregator integrations, and this repository does not publish a dedicated Bloxology-owned router contract address.',
     },
   },
 };

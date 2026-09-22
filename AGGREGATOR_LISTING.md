@@ -19,6 +19,7 @@ The canonical values for the app are defined in `apps/web/src/lib/bloxologyToken
 - Primary network: Base (8453)
 - Default token list: Base, Ethereum, Polygon, Kava (as used by the app)
 - Foundation policy: keep all token addresses, decimals, and chain IDs in one source of truth for app use and outbound listing requests
+- Router publication policy: active aggregator routing is tracked here, while any dedicated Bloxology-owned router contract address remains unpublished in this repository
 
 ## Verification checklist
 
