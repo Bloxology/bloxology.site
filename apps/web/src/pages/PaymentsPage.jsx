@@ -38,6 +38,7 @@ const PaymentsPage = () => {
           name="description"
           content="Bloxology Payments helps small businesses accept fast, secure digital payments with simple setup and scalable tools."
         />
+        <link rel="canonical" href="https://bloxology.site/payments" />
       </Helmet>
 
       <div className="min-h-screen py-24 px-4 sm:px-6 lg:px-8">
