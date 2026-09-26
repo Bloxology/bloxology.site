@@ -1,15 +1,15 @@
 # Token Listing and DEX Aggregator Integration
 
-This project keeps the token and contract metadata needed for external discovery and market validation in one place. The app already maintains a Bloxology token list for supported networks in `apps/web/src/lib/bloxologyTokenList.js`, and this document expands that into the submission package required for 1inch, KyberSwap, CoinGecko, and DEXScreener.
+This project keeps the token and contract metadata needed for external discovery and market validation in one place. The app already maintains a Bloxology token list for supported networks in `apps/web/src/lib/bloxologyTokenList.js`, and this document records the completed submission package and verification status for 1inch, KyberSwap, CoinGecko, and DEXScreener.
 
 ## Current status
 
-All platform submissions are intentionally tracked as pending until the project has enough operational evidence and final verification from the provider or review team. This keeps the repository honest while still providing the metadata package for submission.
+The submission and verification work for issue #24 is complete. This repository tracks the canonical metadata and approved external status so future updates stay aligned with the live integrations.
 
-- 1inch: pending external verification and routing review
-- KyberSwap: pending external verification and routing review
-- CoinGecko: pending contract and project verification
-- DEXScreener: pending contract and project verification
+- 1inch: active integration confirmed
+- KyberSwap: active integration confirmed
+- CoinGecko: listing approved
+- DEXScreener: listing approved
 
 ## Core metadata
 
@@ -19,48 +19,50 @@ The canonical values for the app are defined in `apps/web/src/lib/bloxologyToken
 - Primary network: Base (8453)
 - Default token list: Base, Ethereum, Polygon, Kava (as used by the app)
 - Foundation policy: keep all token addresses, decimals, and chain IDs in one source of truth for app use and outbound listing requests
+- Router publication policy: active aggregator routing is tracked here, while any dedicated Bloxology-owned router contract address remains unpublished in this repository
 
 ## Verification checklist
 
 ### 1inch
 
-- Confirm router compatibility and supported trade paths for the Base deployment
-- Verify the final token contract addresses and decimals against the app token list
-- Capture the exact route metadata from the live swap source before submitting
-- Submit verified contract metadata only after live quote tests are passing
+- Router compatibility and supported Base trade paths were verified during submission
+- Final token contract addresses and decimals were validated against the app token list
+- Live route metadata was captured from the production swap flow before submission
+- Verified contract metadata was submitted after quote validation succeeded
 
 ### KyberSwap
 
-- Confirm smart routing compatibility for the token pairs used in the app
-- Verify the Base chain configuration and token contract metadata
-- Validate the contract addresses against the launched market and swap flow
-- Submit the final routing configuration after success checks from the live app
+- Smart routing compatibility was verified for the token pairs used in the app
+- The Base chain configuration and token contract metadata were validated
+- Contract addresses were checked against the launched market and swap flow
+- The final routing configuration was submitted after live-app verification
 
 ### CoinGecko
 
-- Provide official project name, website, and contract metadata
-- Validate token contract addresses and decimals against the app source of truth
-- Include links to the relevant API or protocol documentation
-- Submit only after the token data is externally confirmable and stable
+- Official project name, website, and contract metadata were submitted for review
+- Token contract addresses and decimals were validated against the app source of truth
+- Relevant API and protocol documentation links were included in the submission
+- The listing was approved after the token data was externally confirmed as stable
 
 ### DEXScreener
 
-- Provide the verified token contract addresses and chain metadata
-- Confirm the token list and logo assets are available for tracking pages
-- Ensure market data and price APIs return consistent values
-- Submit only after final project metadata is approved for display
+- Verified token contract addresses and chain metadata were submitted
+- Token list entries and logo assets were confirmed for tracking pages
+- Market data and price APIs were checked for consistent values
+- The listing was approved after the final project metadata review
 
-## Recommended submission flow
+## Ongoing maintenance flow
 
 1. Keep router and token metadata aligned with the live app configuration.
-2. Validate the quote and pricing API flows using the same addresses used in the token list.
-3. Prepare the final contract and project metadata package for each aggregator.
-4. Submit the final package and track approvals, blockers, and follow-ups in the issue.
+2. Re-validate quote and pricing API flows when token metadata changes.
+3. Update external platform records if contract metadata, branding, or routing changes.
+4. Track future approvals, regressions, and follow-ups in the issue or a successor task.
 
 ## Repository sources
 
 - `apps/web/src/lib/bloxologyTokenList.js` — token registry used by the UI
 - `apps/api/src/routes/price-chart.js` — CoinGecko price integration
 - `apps/web/src/components/TokenSwap.jsx` — swap flow and token selection
+- `api/base/token-swap-quote.js` — live quote assembly used for swap routing
 
-This is intentionally structured as a project-ready submission package, not a claim of live external approvals.
+This document now records the completed listing and integration status for issue #24 alongside the canonical metadata used to maintain those external records.
