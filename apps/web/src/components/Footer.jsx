@@ -37,9 +37,9 @@ const Footer = () => {
                 <a href="#" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Terms of Service
                 </a>
-                <a href="#" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
+                <Link to="/guides/base-mainnet-token-swap-low-fees" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Documentation
-                </a>
+                </Link>
               </div>
             </div>
 
