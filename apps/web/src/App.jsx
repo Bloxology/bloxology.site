@@ -27,6 +27,7 @@ import SettingsPage from '@/pages/SettingsPage.jsx';
 import HelpPage from '@/pages/HelpPage.jsx';
 import AboutPage from '@/pages/AboutPage.jsx';
 import ContactPage from '@/pages/ContactPage.jsx';
+import PaymentsPage from '@/pages/PaymentsPage.jsx';
 import DebugTokensPage from '@/pages/DebugTokensPage.jsx';
 import BusinessPaymentsPage from '@/pages/BusinessPaymentsPage.jsx';
 

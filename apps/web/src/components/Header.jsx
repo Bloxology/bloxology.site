@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { path: '/help', label: 'Help', icon: HelpCircle },
   { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/about', label: 'About', icon: Info },
+  { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/contact', label: 'Contact', icon: Mail }
 ];
 
