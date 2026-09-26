@@ -29,6 +29,7 @@ import AboutPage from '@/pages/AboutPage.jsx';
 import ContactPage from '@/pages/ContactPage.jsx';
 import PaymentsPage from '@/pages/PaymentsPage.jsx';
 import DebugTokensPage from '@/pages/DebugTokensPage.jsx';
+import BusinessPaymentsPage from '@/pages/BusinessPaymentsPage.jsx';
 
 function App() {
   return (
@@ -49,7 +50,7 @@ function App() {
                   <Route path="/help" element={<HelpPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/payments" element={<PaymentsPage />} />
+                  <Route path="/payments" element={<BusinessPaymentsPage />} />
                   
                   {/* Development/Debug Routes - Publicly accessible for testing */}
                   <Route path="/debug-tokens" element={<DebugTokensPage />} />

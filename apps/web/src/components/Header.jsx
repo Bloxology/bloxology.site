@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { path: '/lock', label: 'Lock', icon: Lock, protected: true },
   { path: '/settings', label: 'Settings', icon: Settings, protected: true },
   { path: '/help', label: 'Help', icon: HelpCircle },
+  { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/about', label: 'About', icon: Info },
   { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/contact', label: 'Contact', icon: Mail }
