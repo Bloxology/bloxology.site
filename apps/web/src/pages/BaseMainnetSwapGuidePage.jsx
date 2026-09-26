@@ -44,7 +44,7 @@ const BaseMainnetSwapGuidePage = () => {
           content="Step-by-step Base Mainnet token swap guide with low fee trading and security tips."
         />
         <meta name="twitter:image" content="https://bloxology.site/icon-512x512.svg" />
-        <script type="application/ld+json">{JSON.stringify(howToSchema)}</script>
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
       </Helmet>
 
       <div className="min-h-screen py-24 px-4 sm:px-6 lg:px-8">
