@@ -31,6 +31,9 @@ const HOW_IT_WORKS = [
 ];
 
 const BusinessPaymentsPage = () => {
+  const canonicalUrl =
+    typeof window !== 'undefined' ? `${window.location.origin}/payments` : 'https://bloxology.site/payments';
+
   return (
     <>
       <Helmet>
@@ -39,7 +42,7 @@ const BusinessPaymentsPage = () => {
           name="description"
           content="Help your small business accept digital payments with Bloxology using secure, transparent wallet-based transactions."
         />
-        <link rel="canonical" href="https://bloxology.site/payments" />
+        <link rel="canonical" href={canonicalUrl} />
       </Helmet>
 
       <div className="min-h-screen py-24 px-4 sm:px-6 lg:px-8">
@@ -69,7 +72,6 @@ const BusinessPaymentsPage = () => {
                   src="/bloxology-payments.png"
                   alt="Bloxology accepted here sign for merchants"
                   className="w-full h-auto rounded-xl border border-border/40"
-                  loading="lazy"
                 />
               </CardContent>
             </Card>
@@ -137,12 +139,12 @@ const BusinessPaymentsPage = () => {
                     Reach out to the Bloxology team to launch payments for your business.
                   </p>
                 </div>
-                <Link to="/contact">
-                  <Button className="crypto-gradient text-white font-bold">
+                <Button asChild className="crypto-gradient text-white font-bold">
+                  <Link to="/contact">
                     Contact Bloxology
                     <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
