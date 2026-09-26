@@ -37,7 +37,7 @@ const BaseMainnetSwapGuidePage = () => {
         <meta property="og:type" content="article" />
         <meta property="og:url" content="https://bloxology.site/guides/base-mainnet-token-swap-low-fees" />
         <meta property="og:image" content="https://bloxology.site/icon-512x512.svg" />
-        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content="How to Swap Tokens on Base Mainnet with Low Fees" />
         <meta
           name="twitter:description"
