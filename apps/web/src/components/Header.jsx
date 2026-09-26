@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Wallet, Settings, HelpCircle, Info, Mail, LayoutDashboard, LogOut, ArrowRightLeft, Droplet, Lock } from 'lucide-react';
+import { Menu, X, Wallet, Settings, HelpCircle, Info, Mail, LayoutDashboard, LogOut, ArrowRightLeft, Droplet, Lock, CreditCard } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '@/contexts/WalletContext.jsx';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ const NAV_ITEMS = [
   { path: '/lock', label: 'Lock', icon: Lock, protected: true },
   { path: '/settings', label: 'Settings', icon: Settings, protected: true },
   { path: '/help', label: 'Help', icon: HelpCircle },
+  { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/about', label: 'About', icon: Info },
   { path: '/contact', label: 'Contact', icon: Mail }
 ];
