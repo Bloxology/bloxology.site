@@ -25,3 +25,5 @@
     "flow-bin": "^0.308.0"
   }
 }
+"@supabase/supabase-js": "^2.0.0"
+const { createClient } = require('@supabase/supabase-js');
