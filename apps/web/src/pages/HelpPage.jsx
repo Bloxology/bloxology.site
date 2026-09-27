@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Search, ExternalLink, BookOpen } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -156,6 +157,20 @@ const HelpPage = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
           >
+            <Card className="glass-card border-border/50 mb-8">
+              <CardHeader>
+                <CardTitle className="text-[var(--text-primary)]">Featured Guide</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  to="/guides/base-mainnet-token-swap-low-fees"
+                  className="text-primary hover:underline font-semibold"
+                >
+                  How to Swap Tokens on Base Mainnet with Low Fees
+                </Link>
+              </CardContent>
+            </Card>
+
             <Card className="glass-card border-border/50">
               <CardHeader>
                 <CardTitle className="text-[var(--text-primary)]">Frequently Asked Questions</CardTitle>

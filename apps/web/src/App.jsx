@@ -30,6 +30,7 @@ import ContactPage from '@/pages/ContactPage.jsx';
 import PaymentsPage from '@/pages/PaymentsPage.jsx';
 import DebugTokensPage from '@/pages/DebugTokensPage.jsx';
 import BusinessPaymentsPage from '@/pages/BusinessPaymentsPage.jsx';
+import BaseMainnetSwapGuidePage from '@/pages/BaseMainnetSwapGuidePage.jsx';
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/payments" element={<BusinessPaymentsPage />} />
+                  <Route path="/guides/base-mainnet-token-swap-low-fees" element={<BaseMainnetSwapGuidePage />} />
                   
                   {/* Development/Debug Routes - Publicly accessible for testing */}
                   <Route path="/debug-tokens" element={<DebugTokensPage />} />
