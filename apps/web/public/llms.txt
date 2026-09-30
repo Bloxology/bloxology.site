@@ -1,0 +1,13 @@
+## Pages
+- [About - Bloxology](/about): Learn about Bloxology, the comprehensive multi-chain DeFi platform
+- [Bloxology - Multi-Chain Crypto Platform](/home): Connect your wallet to Bloxology and access 7 blockchain networks including Ethereum, Base, Polygon, Solana, Kava, Sonic, and Flow.
+- [Contact Us - Bloxology](/contact): Get in touch with the Bloxology team
+- [Dashboard - Bloxology](/dashboard): View your crypto portfolio and manage your assets
+- [Debug Tokens - Bloxology](/debugtokens): No description available
+- [Help Center - Bloxology](/help): Get help with Bloxology DeFi tools, FAQs, and guides
+- [Liquidity Pools - Bloxology](/liquidity): Provide liquidity to earn trading fees and rewards.
+- [Lock Tokens - Bloxology](/lock): Lock your tokens securely to earn high yield rewards.
+- [Login - Bloxology](/login): Connect your wallet to access Bloxology dashboard.
+- [Settings - Bloxology](/settings): Manage your Bloxology preferences and wallet settings
+- [Swap Tokens - Bloxology](/swap): Swap tokens instantly with low fees and minimal slippage.
+- [Transaction Details - Bloxology](/transactiondetails): No description available
