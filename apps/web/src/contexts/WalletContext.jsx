@@ -64,13 +64,8 @@ export const WalletProvider = ({ children }) => {
 
   const clearError = () => setError(null);
 
-  const connectedWallet = wallet;
-  const walletAddress = wallet;
-
   const value = {
     wallet,
-    connectedWallet,
-    walletAddress,
     setWallet,
     walletType,
     setWalletType,

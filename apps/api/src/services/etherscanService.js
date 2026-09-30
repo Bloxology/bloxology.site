@@ -6,9 +6,13 @@ import logger from '../utils/logger.js';
 import * as cdpService from './cdpService.js';
 import * as alchemyService from './alchemyService.js';
 
-const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || '';
+const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY;
 
-logger.info(`[Validation] ETHERSCAN_API_KEY validation: ${ETHERSCAN_API_KEY ? 'API key exists' : 'API key missing — etherscan routes will return errors'}`);
+logger.info(`[Validation] ETHERSCAN_API_KEY validation: ${ETHERSCAN_API_KEY ? 'API key exists' : 'API key missing'}`);
+
+if (!ETHERSCAN_API_KEY) {
+  throw new Error('ETHERSCAN_API_KEY is not defined in environment variables');
+}
 
 // Initialize cache with different TTLs
 const accountCache = new NodeCache({ stdTTL: 300 }); // 5 minutes
@@ -333,7 +337,7 @@ const getTokenBalances = async (address, chainId) => {
         tokenBalances.set(tokenAddress, {
           address: tokenAddress,
           balance: BigInt(0),
-          decimals: Number.isFinite(parseInt(tx.tokenDecimal, 10)) ? parseInt(tx.tokenDecimal, 10) : 18,
+          decimals: parseInt(tx.tokenDecimal, 10) || 18,
           symbol: tx.tokenSymbol || 'UNKNOWN',
           name: tx.tokenName || 'Unknown Token',
         });

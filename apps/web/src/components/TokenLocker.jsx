@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Lock, Search, Loader2, CheckCircle, AlertCircle, Clock, Shield } from 'lucide-react';
 import { useBaseAuth, useNetwork } from '@/contexts/BaseAuthContext.jsx';
-import { formatBalance } from '@/utils/formatBalance.js';
 import apiServerClient from '@/lib/apiServerClient.js';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,87 +11,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import FeeDisplay from '@/components/FeeDisplay.jsx';
 import { calculateLockerFee, FEE_RECIPIENT } from '@/utils/feeCalculator.js';
-
-const normaliseWalletError = (err, networkName) => {
-  if (!err) return 'Lock failed';
-
-  const code = err?.code ?? err?.error?.code;
-  if (code === 4001 || code === 'ACTION_REJECTED') {
-    return 'Transaction was rejected in your wallet.';
-  }
-
-  const candidates = [];
-  const addCandidate = (v) => { if (v && typeof v === 'string') candidates.push(v); };
-  addCandidate(typeof err === 'string' ? err : null);
-  addCandidate(err?.message);
-  addCandidate(err?.reason);
-  addCandidate(err?.shortMessage);
-  addCandidate(typeof err?.toString === 'function' ? err.toString() : null);
-  addCandidate(err?.data?.message);
-  addCandidate(err?.error?.message);
-  addCandidate(err?.cause?.message);
-  addCandidate(err?.data?.originalError?.message);
-  try { addCandidate(JSON.stringify(err)); } catch (_) {}
-
-  const joined = candidates.join(' | ');
-  const joinedLower = joined.toLowerCase();
-
-  if (
-    joinedLower.includes("failed to execute 'json' on 'response'") ||
-    joinedLower.includes('unexpected end of json input') ||
-    joinedLower.includes('json parse error') ||
-    joinedLower.includes('json rpc error')
-  ) {
-    return `Your wallet\'s RPC returned an empty response. Make sure your wallet is switched to ${networkName} and try again.`;
-  }
-
-  if (
-    joinedLower.includes('insufficient funds') ||
-    joinedLower.includes('insufficient eth') ||
-    joinedLower.includes('gas required exceeds allowance')
-  ) {
-    return `Insufficient ETH for gas fees on ${networkName}. Please top up your ETH balance and try again.`;
-  }
-
-  return candidates[0] || 'Lock failed';
-};
-
-const ensureWalletOnNetwork = async (selectedNetwork) => {
-  if (!window.ethereum) return;
-
-  // Ensure wallet has authorised this session before any provider calls
-  await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-  try {
-    const desiredHex = `0x${Number(selectedNetwork.id).toString(16)}`;
-    const currentHex = await window.ethereum.request({ method: 'eth_chainId' });
-    if (currentHex?.toLowerCase() === desiredHex.toLowerCase()) return;
-
-    try {
-      await window.ethereum.request({
-        method: 'wallet_switchEthereumChain',
-        params: [{ chainId: desiredHex }],
-      });
-    } catch (switchErr) {
-      if (switchErr?.code === 4902) {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: desiredHex,
-            chainName: selectedNetwork.name,
-            rpcUrls: [selectedNetwork.rpcUrl],
-            nativeCurrency: {
-              name: selectedNetwork.currencySymbol,
-              symbol: selectedNetwork.currencySymbol,
-              decimals: 18,
-            },
-            blockExplorerUrls: selectedNetwork.blockExplorer ? [selectedNetwork.blockExplorer] : [],
-          }],
-        });
-      }
-    }
-  } catch (_) {}
-};
 
 const TokenLocker = () => {
   const { activeAddress } = useBaseAuth();
@@ -131,18 +49,8 @@ const TokenLocker = () => {
         `/base/token-balance?walletAddress=${activeAddress || '0x0'}&tokenAddress=${tokenAddress.trim()}&chainId=${selectedNetwork.id}`
       );
 
-      let data;
-      try {
-        const text = await response.text();
-        data = text ? JSON.parse(text) : null;
-      } catch (_) {
-        data = null;
-      }
-
-      if (!data) {
-        throw new Error('Server returned an empty or invalid response. Make sure the API server is running.');
-      }
-
+      const data = await response.json();
+      
       if (!response.ok || !data.success) {
         throw new Error(data.error || 'Failed to check token balance');
       }
@@ -163,106 +71,25 @@ const TokenLocker = () => {
       return;
     }
 
-    if (!activeAddress) {
-      setError('Please connect your wallet first');
-      return;
-    }
-
-    if (!window.ethereum) {
-      setError('No wallet extension detected. Please install MetaMask or a compatible wallet.');
-      return;
-    }
-
     setLoading(true);
     setOperation('lock');
     setError(null);
     setResult(null);
 
-    try {
-      // 1. Fetch the encoded ERC-20 transfer transaction from the API
-      const response = await apiServerClient.fetch('/base/lock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          walletAddress: activeAddress,
-          tokenAddress: tokenAddress.trim(),
-          amount,
-          unlockDate,
-          chainId: selectedNetwork.id,
-        }),
-      });
-
-      let data;
-      try {
-        const text = await response.text();
-        data = text ? JSON.parse(text) : null;
-      } catch (_) {
-        data = null;
-      }
-
-      if (!data) {
-        throw new Error('Server returned an empty or invalid response. Make sure the API server is running and try again.');
-      }
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.error || 'Failed to prepare lock transaction');
-      }
-
-      const { transaction, lockDetails } = data.data;
-
-      await ensureWalletOnNetwork(selectedNetwork);
-
-      // Pre-flight: check ETH balance covers gas (0.00005 ETH minimum on Base)
-      try {
-        const MIN_GAS_WEI = BigInt('50000000000000'); // 0.00005 ETH
-        const balHex = await window.ethereum.request({ method: 'eth_getBalance', params: [activeAddress, 'latest'] });
-        const balWei = BigInt(balHex);
-        if (balWei < MIN_GAS_WEI) {
-          const balEth = formatBalance(Number(balWei) / 1e18);
-          throw new Error(`Insufficient ETH for gas fees. You have ${balEth} ETH on ${selectedNetwork.name} but need at least 0.00005 ETH to send this transaction.`);
-        }
-      } catch (balErr) {
-        if (balErr.message?.startsWith('Insufficient ETH')) throw balErr;
-        // eth_getBalance unavailable — skip check and proceed
-      }
-
-      // 2. Submit the ERC-20 transfer via the user's wallet
-      let txHash;
-      try {
-        txHash = await window.ethereum.request({
-          method: 'eth_sendTransaction',
-          params: [{
-            from: activeAddress,
-            to: transaction.to,
-            data: transaction.data,
-            value: transaction.value,
-          }],
-        });
-      } catch (walletErr) {
-        throw new Error(normaliseWalletError(walletErr, selectedNetwork.name));
-      }
-
-      if (!txHash) {
-        throw new Error('Wallet did not return a transaction hash.');
-      }
-
-      setResult({
-        message: `Tokens locked on ${selectedNetwork.name}`,
-        transactionHash: txHash,
-        amount: lockDetails.amount,
-        symbol: lockDetails.symbol,
-        feePaid: lockerFee,
-        escrowAddress: lockDetails.escrowAddress,
-        unlockDate: lockDetails.unlockDate,
-        lockedBy: activeAddress,
-      });
-      setAmount('');
-    } catch (err) {
-      setError(normaliseWalletError(err, selectedNetwork.name));
-    } finally {
+    // Simulate locking transaction and fee deduction using activeAddress
+    setTimeout(() => {
       setLoading(false);
       setOperation(null);
-    }
+      setResult({
+        message: `Tokens successfully locked on ${selectedNetwork.name}`,
+        transactionHash: '0x' + Math.random().toString(16).slice(2, 42),
+        amount: amount,
+        feePaid: lockerFee,
+        unlockDate: new Date(unlockDate).toISOString(),
+        lockedBy: activeAddress
+      });
+      setAmount('');
+    }, 2500);
   };
 
   return (
@@ -302,7 +129,7 @@ const TokenLocker = () => {
                 </div>
                 {balanceInfo && (
                   <p className="text-sm text-accent font-medium mt-1">
-                    Available Balance: {formatBalance(balanceInfo.balance)} {balanceInfo.symbol}
+                    Available Balance: {balanceInfo.balance} {balanceInfo.symbol}
                   </p>
                 )}
               </div>
@@ -393,11 +220,14 @@ const TokenLocker = () => {
                   <p className="font-mono break-all">
                     <span className="text-[var(--text-primary)]">TX Hash:</span> {result.transactionHash}
                   </p>
-                  <p>
-                    <span className="text-[var(--text-primary)]">Amount Locked:</span> {result.amount} {result.symbol}
+                  <p className="font-mono break-all">
+                    <span className="text-[var(--text-primary)]">Locked By:</span> {result.lockedBy}
                   </p>
-                  <p className="font-mono break-all text-xs">
-                    <span className="text-[var(--text-primary)]">Escrow:</span> {result.escrowAddress}
+                  <p>
+                    <span className="text-[var(--text-primary)]">Amount Locked:</span> {result.amount}
+                  </p>
+                  <p className="text-destructive/90">
+                    <span className="text-[var(--text-primary)]">Fee Deducted:</span> {result.feePaid} GPB
                   </p>
                   <p className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />

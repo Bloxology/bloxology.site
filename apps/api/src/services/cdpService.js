@@ -40,20 +40,10 @@ const generateJwt = async (method, path) => {
 
   // If CDP_API_KEY looks like a PEM private key, use Ed25519 JWT signing
   if (CDP_API_KEY.includes('BEGIN')) {
-    try {
-      // Ensure proper PEM formatting with line breaks
-      const formattedKey = CDP_API_KEY
-        .trim()
-        .replace(/\\n/g, '\n') // Handle escaped newlines
-        .replace(/\\r/g, '\r');
-      const privateKey = await importPKCS8(formattedKey, 'EdDSA');
-      return new SignJWT(payload)
-        .setProtectedHeader({ alg: 'EdDSA', kid: CDP_KEY_ID, nonce, typ: 'JWT' })
-        .sign(privateKey);
-    } catch (error) {
-      logger.error(`[CDP] JWT generation failed: ${error.message}`);
-      throw new Error(`Invalid CDP private key format: ${error.message}`);
-    }
+    const privateKey = await importPKCS8(CDP_API_KEY, 'EdDSA');
+    return new SignJWT(payload)
+      .setProtectedHeader({ alg: 'EdDSA', kid: CDP_KEY_ID, nonce, typ: 'JWT' })
+      .sign(privateKey);
   }
 
   // Otherwise use the API key as a Bearer token (works for Node RPC, 

@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { motion } from 'framer-motion';
-import { formatBalance } from '@/utils/formatBalance.js';
 import { ArrowLeft, Copy, ExternalLink, CheckCircle2, FileText, Clock, Zap, Hash } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNetwork } from '@/contexts/BaseAuthContext.jsx';
@@ -69,7 +68,7 @@ const TransactionDetailsPage = () => {
 
   const formatAmount = (valueEth) => {
     if (!valueEth || valueEth === '0') return '0';
-    return formatBalance(valueEth);
+    return parseFloat(valueEth).toLocaleString(undefined, { maximumFractionDigits: 6 });
   };
 
   return (

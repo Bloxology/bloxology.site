@@ -2,7 +2,7 @@
 {
   "name": "Bloxology",
   "short_name": "Bloxology",
-  "description": "Base-first DeFi app for swaps, liquidity, token locking, and portfolio tools.",
+  "description": "DeFi Suite on Base Network",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0e27",

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import WalletConnectorWagmi from '@/components/WalletConnectorWagmi.jsx';
+import WalletConnector from '@/components/WalletConnector.jsx';
 
 const HeroSection = ({ onWalletConnected }) => {
   return (
@@ -78,7 +78,7 @@ const HeroSection = ({ onWalletConnected }) => {
             </div>
 
             <div className="glass-card-strong rounded-2xl p-8 border-white/10 shadow-2xl">
-              <WalletConnectorWagmi onSuccess={onWalletConnected} />
+              <WalletConnector onSuccess={onWalletConnected} />
             </div>
           </motion.div>
 

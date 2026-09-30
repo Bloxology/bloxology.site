@@ -3,7 +3,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { Github, X, MessageCircle } from 'lucide-react';
-import { LOGO_URL } from '@/constants';
 
 const Footer = () => {
   return (
@@ -17,7 +16,7 @@ const Footer = () => {
             <div className="space-y-4">
               <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity duration-200">
                 <img 
-                  src={LOGO_URL} 
+                  src="https://horizons-cdn.hostinger.com/c39b4b4c-cce3-4597-b59b-2cc69cfe80ed/b2bd7621770a2a1eb770c2fa7581485a.png" 
                   alt="Bloxology logo"
                   className="h-8 sm:h-9 w-auto"
                 />
@@ -37,12 +36,9 @@ const Footer = () => {
                 <a href="#" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Terms of Service
                 </a>
-                <Link to="/help" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
+                <a href="#" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Documentation
-                </Link>
-                <Link to="/guides/base-mainnet-token-swap-low-fees" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
-                  Base Swap Guide
-                </Link>
+                </a>
               </div>
             </div>
 

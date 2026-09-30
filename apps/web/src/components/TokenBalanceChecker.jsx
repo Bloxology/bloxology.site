@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Wallet, RefreshCw, Coins } from 'lucide-react';
 import { useWallet } from '@/contexts/WalletContext.jsx';
-import { formatBalance } from '@/utils/formatBalance.js';
 import { useBaseAuth, useNetwork } from '@/contexts/BaseAuthContext.jsx';
 import apiServerClient from '@/lib/apiServerClient.js';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,7 @@ const TokenBalanceChecker = ({ selectedNetwork }) => {
           const balanceBigInt = BigInt(rawBalance);
           const divisorBigInt = BigInt(10) ** BigInt(decimals);
           const whole = balanceBigInt / divisorBigInt;
-          const fraction = (balanceBigInt % divisorBigInt).toString().padStart(decimals, '0');
+          const fraction = (balanceBigInt % divisorBigInt).toString().padStart(decimals, '0').slice(0, 6);
           const normalized = `${whole.toString()}.${fraction}`;
 
           return {
@@ -64,7 +63,7 @@ const TokenBalanceChecker = ({ selectedNetwork }) => {
             symbol: token.symbol || 'TOKEN',
             name: token.name || token.symbol || 'Custom Token',
             balance: '0',
-            balanceFormatted: '0.000000000',
+            balanceFormatted: '0.000000',
             decimals: Number(token.decimals ?? 18),
             isCustom: true,
           };
@@ -200,7 +199,7 @@ const TokenBalanceChecker = ({ selectedNetwork }) => {
       console.log('[TokenBalanceChecker] Calling setTokenBalances with: []');
       setTokenBalances([]);
     }
-  }, [effectiveWallet, selectedNetwork?.id]);
+  }, [effectiveWallet, selectedNetwork?.id, jwtToken]);
 
   if (!effectiveWallet || !selectedNetwork) return null;
 
@@ -260,7 +259,7 @@ const TokenBalanceChecker = ({ selectedNetwork }) => {
               <Skeleton className="h-12 w-48 mt-2 bg-white/10" />
             ) : (
               <h3 className="text-5xl font-extrabold text-[var(--text-primary)] tracking-tight">
-                {nativeBalance ? formatBalance(nativeBalance.balanceEth) : '0'} {currencySymbol}
+                {nativeBalance ? parseFloat(nativeBalance.balanceEth).toLocaleString('en-US', { maximumFractionDigits: 4 }) : '0'} {currencySymbol}
               </h3>
             )}
           </CardContent>
@@ -304,7 +303,7 @@ const TokenBalanceChecker = ({ selectedNetwork }) => {
                 <CardContent>
                   <div className="space-y-1">
                     <p className="text-2xl font-bold text-[var(--text-primary)] truncate" title={token.balance}>
-                      {formatBalance(token.balance)}
+                      {parseFloat(token.balance).toLocaleString(undefined, { maximumFractionDigits: 4 })}
                     </p>
                   </div>
                 </CardContent>

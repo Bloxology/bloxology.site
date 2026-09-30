@@ -150,16 +150,10 @@ const configWindowFetchMonkeyPatch = `
 const originalFetch = window.fetch;
 
 window.fetch = function(...args) {
-	const requestUrl = (() => {
-		const firstArg = args[0];
-		if (firstArg instanceof Request) return firstArg.url || '';
-		if (typeof firstArg === 'string') return firstArg;
-		if (firstArg && typeof firstArg.url === 'string') return firstArg.url;
-		return '';
-	})();
+	const url = args[0] instanceof Request ? args[0].url : args[0];
 
 	// Skip WebSocket URLs
-	if (requestUrl.startsWith('ws:') || requestUrl.startsWith('wss:')) {
+	if (url.startsWith('ws:') || url.startsWith('wss:')) {
 		return originalFetch.apply(this, args);
 	}
 
@@ -175,18 +169,15 @@ window.fetch = function(...args) {
 			if (!response.ok && !isDocumentResponse) {
 					const responseClone = response.clone();
 					const errorFromRes = await responseClone.text();
-					const targetUrl = response.url || requestUrl || '[unknown-url]';
-					const errorBody = errorFromRes || '[empty response body]';
-					console.error(\`Fetch error from \${targetUrl} (status \${response.status}): \${errorBody}\`);
+					const requestUrl = response.url;
+					console.error(\`Fetch error from \${requestUrl}: \${errorFromRes}\`);
 			}
 
 			return response;
 		})
 		.catch(error => {
-			if (!requestUrl || !requestUrl.match(/\.html?$/i)) {
-				const targetUrl = requestUrl || '[unknown-url]';
-				const errorMessage = (error && error.message) ? error.message : String(error);
-				console.error(\`Fetch error from \${targetUrl}: \${errorMessage}\`);
+			if (!url.match(/\.html?$/i)) {
+				console.error(error);
 			}
 
 			throw error;

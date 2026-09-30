@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const envPath = path.resolve(__dirname, '../../../.env');
+const envPath = path.resolve(__dirname, '../../.env');
 
 dotenv.config({ path: envPath });
 
@@ -29,9 +29,10 @@ const RPC_ENDPOINTS = {
 	kava: 'https://evm.kava.io',
 };
 
-if (process.env.NODE_ENV !== NodeEnv.Production) {
-	console.log('[Constants] RPC Endpoints configured');
-}
+console.log('[Constants] RPC Endpoints configured:');
+console.log('[Constants] ethereum:', RPC_ENDPOINTS.ethereum);
+console.log('[Constants] polygon:', RPC_ENDPOINTS.polygon);
+console.log('[Constants] base:', RPC_ENDPOINTS.base);
 
 const CHAIN_ID_TO_RPC_KEY = {
 	1: 'ethereum',

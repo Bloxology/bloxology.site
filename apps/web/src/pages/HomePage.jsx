@@ -20,15 +20,11 @@ const HomePage = () => {
   return (
     <>
       <Helmet>
-        <title>Bloxology | Base DeFi App</title>
+        <title>Bloxology - Multi-Chain Crypto Platform</title>
         <meta
           name="description"
-          content="Bloxology is a Base-first DeFi app for token swaps, liquidity tools, token locking, and portfolio management."
+          content="Connect your wallet to Bloxology and access 7 blockchain networks including Ethereum, Base, Polygon, Solana, Kava, Sonic, and Flow."
         />
-        <link rel="canonical" href="https://bloxology.site/" />
-        <meta property="og:title" content="Bloxology | Base DeFi App" />
-        <meta property="og:description" content="Swap tokens, explore liquidity, lock assets, and manage your portfolio on Base with Bloxology." />
-        <meta property="og:url" content="https://bloxology.site/" />
       </Helmet>
 
       <div className="min-h-screen pt-8">

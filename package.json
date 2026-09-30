@@ -2,28 +2,16 @@
   "name": "monorepo",
   "version": "0.0.0",
   "private": true,
-  "engines": {
-    "node": ">=20.19.0"
-  },
   "scripts": {
-    "prestart": "node scripts/preflight.mjs",
-    "dev": "concurrently --kill-others --raw \"npm run dev --workspace web\" \"npm run dev --workspace api\"",
-    "build": "npm run build --workspace web",
-    "start": "node apps/api/src/main.js",
-    "lint": "concurrently --raw \"npm run lint --workspace web\" \"npm run lint --workspace api\"",
-    "test": "echo \"No tests defined\"",
-    "odos:quote": "node scripts/odos-quote-example.mjs",
-    "odos:quote:prod": "node --env-file=env.production scripts/odos-quote-example.mjs"
+    "dev": "concurrently --kill-others --raw \"npm run dev --prefix apps/web\" \"npm run dev --prefix apps/api\"",
+    "build": "concurrently --raw \"npm run build --prefix apps/web\"",
+    "start": "concurrently --kill-others --raw \"npm run start --prefix apps/api\"",
+    "lint": "concurrently --raw \"npm run lint --prefix apps/web\" \"npm run lint --prefix apps/api\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   },
   "workspaces": [
     "apps/*"
-  ],
-  "overrides": {
-    "glob": "^10.6.0"
-  },
-  "devDependencies": {
-    "flow-bin": "^0.308.0"
-  }
+  ]
 }
-"@supabase/supabase-js": "^2.0.0"
-const { createClient } = require('@supabase/supabase-js');

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --host :: --port 3000",
-    "build": "node tools/generate-llms.js || true && npm exec vite build -- --outDir ../../dist/apps/web",
+    "build": "node tools/generate-llms.js || true && vite build --outDir ../../dist/apps/web",
     "start": "vite preview --outDir ../../dist/apps/web --host :: --port 3000",
     "lint": "eslint . --quiet",
     "lint:warn": "eslint ."
@@ -13,7 +13,6 @@
   "dependencies": {
     "@base-org/account": "^1.0.0",
     "@base-org/account-ui": "^1.0.0",
-    "@coinbase/onchainkit": "^0.38.19",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -43,9 +42,6 @@
     "@radix-ui/react-toggle-group": "^1.1.11",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@solana/web3.js": "^1.95.8",
-    "@tanstack/react-query": "^5.96.0",
-    "@wagmi/connectors": "^6.2.0",
-    "@wagmi/core": "^2.22.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
@@ -62,20 +58,13 @@
     "react-helmet": "^6.1.0",
     "react-hook-form": "^7.71.2",
     "react-resizable-panels": "^4.7.2",
-    "react-router-dom": "^7.18.3",
+    "react-router-dom": "^7.13.0",
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "viem": "^2.47.6",
-    "wagmi": "^2.19.5",
-    "zod": "^4.3.6",
-    "@vitejs/plugin-react": "^5.1.4",
-    "vite": "^7.3.6",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.5.23",
-    "tailwindcss": "^3.4.17"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@babel/generator": "^7.26.3",
@@ -85,15 +74,17 @@
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "eslint": "^9.24.0",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.1",
     "eslint-import-resolver-alias": "^1.1.2",
-    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-react": "^7.37.3",
-    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
     "globals": "^15.14.0",
-    "terser": "^5.37.0"
-  },
-  "overrides": {
-    "glob": "^10.6.0"
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "terser": "^5.37.0",
+    "vite": "^7.3.1"
   }
 }

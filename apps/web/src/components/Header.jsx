@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Wallet, Settings, HelpCircle, Info, Mail, LayoutDashboard, LogOut, ArrowRightLeft, Droplet, Lock, CreditCard } from 'lucide-react';
+import { Menu, X, Wallet, Settings, HelpCircle, Info, Mail, LayoutDashboard, LogOut, ArrowRightLeft, Droplet, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useWallet } from '@/contexts/WalletContext.jsx';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { LOGO_URL } from '@/constants';
 
 const NAV_ITEMS = [
   { path: '/', label: 'Home', icon: Wallet },
@@ -16,9 +15,7 @@ const NAV_ITEMS = [
   { path: '/lock', label: 'Lock', icon: Lock, protected: true },
   { path: '/settings', label: 'Settings', icon: Settings, protected: true },
   { path: '/help', label: 'Help', icon: HelpCircle },
-  { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/about', label: 'About', icon: Info },
-  { path: '/payments', label: 'Payments', icon: CreditCard },
   { path: '/contact', label: 'Contact', icon: Mail }
 ];
 
@@ -41,7 +38,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2 group">
             <img 
-              src={LOGO_URL}
+              src="https://horizons-cdn.hostinger.com/c39b4b4c-cce3-4597-b59b-2cc69cfe80ed/b2bd7621770a2a1eb770c2fa7581485a.png"
               alt="Bloxology logo"
               className="h-9 sm:h-10 w-auto object-contain group-hover:scale-110 group-hover:drop-shadow-lg transition-transform duration-300"
             />

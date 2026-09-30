@@ -1,6 +1,5 @@
 node_modules/
 .env
-.env.production
 *.log
 .DS_Store
 dist/
@@ -8,8 +7,3 @@ build/
 test-*.mjs
 find-tx.mjs
 app.tar.gz
-*.zip
-*.code-workspace
-hostinger-deploy/
-.vercel
-.env*.local

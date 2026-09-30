@@ -2,18 +2,13 @@
 import React from 'react';
 import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import { WagmiProvider } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WalletProvider } from '@/contexts/WalletContext.jsx';
 import { BaseAuthProvider } from '@/contexts/BaseAuthContext.jsx';
-import { wagmiConfig } from '@/lib/wagmiConfig.js';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
-
-const queryClient = new QueryClient();
 
 // Pages
 import HomePage from '@/pages/HomePage.jsx';
@@ -27,23 +22,18 @@ import SettingsPage from '@/pages/SettingsPage.jsx';
 import HelpPage from '@/pages/HelpPage.jsx';
 import AboutPage from '@/pages/AboutPage.jsx';
 import ContactPage from '@/pages/ContactPage.jsx';
-import PaymentsPage from '@/pages/PaymentsPage.jsx';
 import DebugTokensPage from '@/pages/DebugTokensPage.jsx';
-import BusinessPaymentsPage from '@/pages/BusinessPaymentsPage.jsx';
-import BaseMainnetSwapGuidePage from '@/pages/BaseMainnetSwapGuidePage.jsx';
 
 function App() {
   return (
-    <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        <WalletProvider>
-          <BaseAuthProvider>
-            <Router>
-              <ScrollToTop />
-              <div className="flex flex-col min-h-screen">
-                <Header />
-                <main className="flex-1 pt-16">
-                  <AnimatePresence mode="wait">
+    <WalletProvider>
+      <BaseAuthProvider>
+        <Router>
+          <ScrollToTop />
+          <div className="flex flex-col min-h-screen">
+            <Header />
+            <main className="flex-1 pt-16">
+              <AnimatePresence mode="wait">
                 <Routes>
                   {/* Public Routes */}
                   <Route path="/" element={<HomePage />} />
@@ -51,8 +41,6 @@ function App() {
                   <Route path="/help" element={<HelpPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
-                  <Route path="/payments" element={<BusinessPaymentsPage />} />
-                  <Route path="/guides/base-mainnet-token-swap-low-fees" element={<BaseMainnetSwapGuidePage />} />
                   
                   {/* Development/Debug Routes - Publicly accessible for testing */}
                   <Route path="/debug-tokens" element={<DebugTokensPage />} />
@@ -122,10 +110,8 @@ function App() {
           </div>
           <Toaster />
         </Router>
-          </BaseAuthProvider>
-        </WalletProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+      </BaseAuthProvider>
+    </WalletProvider>
   );
 }
 

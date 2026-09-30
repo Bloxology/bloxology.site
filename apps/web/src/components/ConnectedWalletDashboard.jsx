@@ -1,14 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Copy, Check, LogOut, RefreshCw, Wallet, Activity, Layers, ArrowRightLeft, Info } from 'lucide-react';
+import { Copy, Check, LogOut, RefreshCw, Wallet, Activity, Layers, ArrowRightLeft } from 'lucide-react';
 import { useBaseAuth, useNetwork } from '@/contexts/BaseAuthContext.jsx';
-import { formatBalance } from '@/utils/formatBalance.js';
 import apiServerClient from '@/lib/apiServerClient.js';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 const ConnectedWalletDashboard = () => {
@@ -24,7 +21,6 @@ const ConnectedWalletDashboard = () => {
   const [copied, setCopied] = useState(null);
   const [portfolioData, setPortfolioData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [isPricingInfoOpen, setIsPricingInfoOpen] = useState(false);
 
   const fetchPortfolio = async () => {
     if (!activeAddress) return;
@@ -70,30 +66,10 @@ const ConnectedWalletDashboard = () => {
   };
 
   const formatCurrency = (val) => {
-    const n = Number(val);
-    const fracs = Math.abs(n) < 0.01 ? 9 : Math.abs(n) < 1 ? 6 : 2;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: fracs
-    }).format(n);
-  };
-
-  const getPriceBadge = (token) => {
-    if (token?.priceAvailable === false) {
-      return { label: 'Price unavailable', className: 'text-destructive/90 bg-destructive/10 border-destructive/20' };
-    }
-    if (token?.priceSource === 'coingecko-contract') {
-      return { label: 'Estimated', className: 'text-amber-300 bg-amber-500/10 border-amber-500/20' };
-    }
-    return null;
-  };
-
-  const getPriceSourceLabel = (token) => {
-    if (token?.priceAvailable === false) return 'No source';
-    if (token?.priceSource === 'coingecko-contract') return 'Estimated source';
-    return 'Live source';
+      currency: 'USD'
+    }).format(val);
   };
 
   return (
@@ -152,7 +128,7 @@ const ConnectedWalletDashboard = () => {
                       <div className="flex items-end justify-between mt-3">
                         <div>
                           <span className="text-xs text-[var(--text-muted)]">Balance</span>
-                          <p className="text-sm font-bold text-accent">{formatBalance(account.balance)} ETH</p>
+                          <p className="text-sm font-bold text-accent">{account.balance} ETH</p>
                         </div>
                         {!isActive && (
                           <Button 
@@ -228,58 +204,9 @@ const ConnectedWalletDashboard = () => {
 
                 {portfolioData && portfolioData.balances.length > 0 ? (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <h4 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Assets</h4>
-                      <div className="flex items-center gap-2 text-[10px] text-[var(--text-secondary)]">
-                        <Info className="h-3.5 w-3.5" />
-                        <span>Estimated = contract-based market price</span>
-                        <span className="opacity-60">|</span>
-                        <span>Price unavailable = no market feed</span>
-                        <Dialog open={isPricingInfoOpen} onOpenChange={setIsPricingInfoOpen}>
-                          <DialogTrigger asChild>
-                            <button
-                              type="button"
-                              className="rounded border border-border/40 px-1.5 py-0.5 text-[10px] font-semibold text-[var(--text-secondary)] transition-colors hover:border-primary/40 hover:text-[var(--text-primary)]"
-                            >
-                              Details
-                            </button>
-                          </DialogTrigger>
-                          <DialogContent className="glass-card-strong border-border/50 sm:max-w-md">
-                            <DialogHeader>
-                              <DialogTitle className="text-[var(--text-primary)]">Pricing Sources</DialogTitle>
-                              <DialogDescription className="text-[var(--text-secondary)]">
-                                Portfolio valuations use token prices from two source tiers:
-                              </DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-3 text-sm">
-                              <div className="rounded-lg border border-primary/20 bg-primary/10 p-3">
-                                <p className="font-semibold text-[var(--text-primary)]">Live mapped source</p>
-                                <p className="text-[var(--text-secondary)]">
-                                  Used for known core tokens with direct market mapping and high-confidence pricing.
-                                </p>
-                              </div>
-                              <div className="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3">
-                                <p className="font-semibold text-amber-300">Estimated source</p>
-                                <p className="text-[var(--text-secondary)]">
-                                  Used when pricing is resolved by token contract lookup; values can lag or vary by market coverage.
-                                </p>
-                              </div>
-                              <div className="rounded-lg border border-destructive/25 bg-destructive/10 p-3">
-                                <p className="font-semibold text-destructive/90">Price unavailable</p>
-                                <p className="text-[var(--text-secondary)]">
-                                  No reliable market feed was returned for that token, so valuation is shown as zero.
-                                </p>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
-                      </div>
-                    </div>
+                    <h4 className="text-sm font-bold text-[var(--text-secondary)] uppercase tracking-wider">Assets</h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {portfolioData.balances.map((token) => {
-                        const priceBadge = getPriceBadge(token);
-
-                        return (
+                      {portfolioData.balances.map((token) => (
                         <div key={token.token} className="glass-card p-4 rounded-xl flex justify-between items-center hover:border-primary/30 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm border border-white/5">
@@ -287,37 +214,15 @@ const ConnectedWalletDashboard = () => {
                             </div>
                             <div>
                               <p className="font-bold text-[var(--text-primary)]">{token.token}</p>
-                              <p className="text-xs text-[var(--text-secondary)] font-medium">{formatBalance(token.balance)}</p>
-                              <TooltipProvider delayDuration={120}>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <p className="inline-flex cursor-help text-[10px] text-[var(--text-muted)] underline decoration-dotted underline-offset-2">
-                                      {getPriceSourceLabel(token)}
-                                    </p>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs bg-[var(--text-primary)] text-[var(--bg-primary)]">
-                                    {token?.priceAvailable === false
-                                      ? 'No reliable market feed found for this token. Value is shown as zero.'
-                                      : token?.priceSource === 'coingecko-contract'
-                                        ? 'Price from contract-based market lookup. This can be less precise than mapped feeds.'
-                                        : 'Price from mapped market feed for a known token.'}
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <p className="text-xs text-[var(--text-secondary)] font-medium">{parseFloat(token.balance).toFixed(4)}</p>
                             </div>
                           </div>
                           <div className="text-right">
                             <p className="font-bold text-[var(--text-primary)]">{formatCurrency(token.value)}</p>
                             <p className="text-xs text-[var(--text-secondary)] font-medium">@{formatCurrency(token.price)}</p>
-                            {priceBadge && (
-                              <span className={`mt-1 inline-block rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${priceBadge.className}`}>
-                                {priceBadge.label}
-                              </span>
-                            )}
                           </div>
                         </div>
-                        );
-                      })}
+                      ))}
                     </div>
                   </div>
                 ) : (

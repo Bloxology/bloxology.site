@@ -2,7 +2,6 @@
 import React from 'react';
 import { Receipt, ArrowRight, Wallet } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { formatBalance } from '@/utils/formatBalance.js';
 
 const FeeDisplay = ({ 
   feeAmount, 
@@ -14,7 +13,8 @@ const FeeDisplay = ({
   title = 'Transaction Breakdown'
 }) => {
   const formatVal = (val) => {
-    return formatBalance(val);
+    const num = parseFloat(val);
+    return isNaN(num) ? '0.00' : num.toLocaleString('en-US', { maximumFractionDigits: 6 });
   };
 
   return (
@@ -55,8 +55,8 @@ const FeeDisplay = ({
 
         <div className="mt-3 pt-3 border-t border-border/30 flex items-start gap-2 text-xs text-[var(--text-muted)]">
           <Wallet className="h-3 w-3 mt-0.5 shrink-0" />
-          <div>
-            Fee Recipient: <span className="text-[var(--text-secondary)] font-semibold">Bloxology</span>
+          <div className="break-all">
+            Fee Recipient: <span className="font-mono text-[var(--text-secondary)]">{feeRecipient}</span>
           </div>
         </div>
       </CardContent>
