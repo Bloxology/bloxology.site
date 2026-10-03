@@ -42,6 +42,7 @@ If any required production env var is missing, startup fails fast with a clear p
 - `CDP_KEY_ID`
 - `CDP_API_KEY`
 - `BASESCAN_API_KEY`
+- `COINMARKETCAP_API_KEY` (enables `/hcgi/api/crypto/prices`; the endpoint returns a 500 if unset)
 
 ## Health check
 After start, verify:
