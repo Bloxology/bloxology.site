@@ -3,6 +3,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import WalletConnectorWagmi from '@/components/WalletConnectorWagmi.jsx';
 import PopularCryptoTicker from '@/components/PopularCryptoTicker.jsx';
+import TopCryptoListings from '@/components/TopCryptoListings.jsx';
 
 const HeroSection = ({ onWalletConnected }) => {
   return (
@@ -110,6 +111,15 @@ const HeroSection = ({ onWalletConnected }) => {
             className="pt-4"
           >
             <PopularCryptoTicker symbol="BTC,ETH" />
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.7 }}
+            className="max-w-xl mx-auto w-full text-left"
+          >
+            <TopCryptoListings limit={10} />
           </motion.div>
         </motion.div>
       </div>
