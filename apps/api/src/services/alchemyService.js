@@ -38,13 +38,21 @@ const getTokenBalances = async (address, chainId) => {
   if (cached) return cached;
 
   try {
-    // Step 1: Get all ERC20 balances
-    const balRes = await axios.post(url, {
-      jsonrpc: '2.0', method: 'alchemy_getTokenBalances', id: 1,
-      params: [address, 'erc20'],
-    }, { timeout: 15000 });
+    // Step 1: Get all ERC20 balances, paginating via pageKey until exhausted
+    // (alchemy_getTokenBalances returns at most maxCount=100 per page)
+    const tokenBalances = [];
+    let pageKey;
+    do {
+      const options = { maxCount: 100 };
+      if (pageKey) options.pageKey = pageKey;
+      const balRes = await axios.post(url, {
+        jsonrpc: '2.0', method: 'alchemy_getTokenBalances', id: 1,
+        params: [address, 'erc20', options],
+      }, { timeout: 15000 });
 
-    const tokenBalances = balRes.data.result?.tokenBalances || [];
+      tokenBalances.push(...(balRes.data.result?.tokenBalances || []));
+      pageKey = balRes.data.result?.pageKey;
+    } while (pageKey);
 
     // Filter non-zero
     const nonZero = tokenBalances.filter(t => {
