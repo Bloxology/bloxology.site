@@ -38,7 +38,7 @@ If any required production env var is missing, startup fails fast with a clear p
 ## Optional environment variables
 - `CUSTOM_RPC_ENDPOINT`
 - `BASE_RPC_ENDPOINT`
-- `ALCHEMY_API_KEY`
+- `ALCHEMY_API_KEY` (enables automatic discovery of all non-zero ERC-20 balances on Base; without it, the balance endpoint falls back to tracked tokens)
 - `CDP_KEY_ID`
 - `CDP_API_KEY`
 - `BASESCAN_API_KEY`
