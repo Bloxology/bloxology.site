@@ -40,6 +40,9 @@ const Footer = () => {
                 <Link to="/help" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Documentation
                 </Link>
+                <Link to="/partnerships" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
+                  Base Partnerships
+                </Link>
                 <Link to="/guides/base-mainnet-token-swap-low-fees" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Base Swap Guide
                 </Link>
