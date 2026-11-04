@@ -1,3 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /swap
+Disallow: /liquidity
+Disallow: /lock
+Disallow: /settings
+Disallow: /transaction/
+Disallow: /debug-tokens
 Sitemap: https://bloxology.site/sitemap.xml

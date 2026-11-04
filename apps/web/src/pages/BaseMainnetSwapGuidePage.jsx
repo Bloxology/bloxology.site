@@ -1,51 +1,54 @@
 import React from 'react';
-import { Helmet } from 'react-helmet';
 import { Link } from 'react-router-dom';
+import Seo from '@/components/Seo.jsx';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { guides, guideUrl, SITE_URL } from '@/lib/guides.js';
+import { articleSchema, breadcrumbSchema, faqSchema, howToSchema as buildHowTo } from '@/lib/seo.js';
 
-const howToSchema = {
-  '@context': 'https://schema.org',
-  '@type': 'HowTo',
-  name: 'How to Swap Tokens on Base Mainnet with Low Fees',
-  description: 'Step-by-step guide to complete low fee DeFi swaps on Base network trading using Bloxology.',
-  totalTime: 'PT5M',
-  step: [
-    { '@type': 'HowToStep', name: 'Connect your wallet', text: 'Open Bloxology and connect a Base-compatible wallet from the login button.' },
-    { '@type': 'HowToStep', name: 'Fund your wallet with gas', text: 'Keep a small ETH balance on Base Mainnet to cover cheap token swap gas fees.' },
-    { '@type': 'HowToStep', name: 'Open the swap interface', text: 'Go to the Swap tab from your dashboard and choose the token pair you want to trade.' },
-    { '@type': 'HowToStep', name: 'Set swap amount and slippage', text: 'Enter the amount, confirm the quote, and keep slippage conservative unless market volatility is high.' },
-    { '@type': 'HowToStep', name: 'Review and confirm', text: 'Check destination token, minimum received, and network before signing the transaction.' },
-    { '@type': 'HowToStep', name: 'Verify settlement', text: 'After confirmation, verify your transaction and balances in wallet history.' }
-  ]
-};
+const guide = guides.find((g) => g.slug === 'base-mainnet-token-swap-low-fees');
+const url = guideUrl(guide.slug);
+
+const steps = [
+  { name: 'Connect your wallet', text: 'Open Bloxology and connect a Base-compatible wallet from the login button.' },
+  { name: 'Fund your wallet with gas', text: 'Keep a small ETH balance on Base Mainnet to cover cheap token swap gas fees.' },
+  { name: 'Open the swap interface', text: 'Go to the Swap tab from your dashboard and choose the token pair you want to trade.' },
+  { name: 'Set swap amount and slippage', text: 'Enter the amount, confirm the quote, and keep slippage conservative unless market volatility is high.' },
+  { name: 'Review and confirm', text: 'Check destination token, minimum received, and network before signing the transaction.' },
+  { name: 'Verify settlement', text: 'After confirmation, verify your transaction and balances in wallet history.' }
+];
+
+const faqs = [
+  { question: 'Why are swaps on Base Mainnet cheaper?', answer: 'Base is an Ethereum Layer 2 network, so gas costs are usually much lower than on Ethereum Mainnet.' },
+  { question: 'Do I need ETH to swap on Base?', answer: 'Yes. Keep a small ETH balance on Base Mainnet to pay gas for the swap transaction.' },
+  { question: 'What slippage should I use?', answer: 'Keep slippage conservative unless market volatility is high, and always review the minimum received amount.' }
+];
+
+const schemas = [
+  articleSchema({ title: guide.title, description: guide.description, url, datePublished: guide.datePublished, dateModified: guide.dateModified }),
+  buildHowTo({
+    name: guide.title,
+    description: 'Step-by-step guide to complete low fee DeFi swaps on Base network trading using Bloxology.',
+    totalTime: 'PT5M',
+    steps
+  }),
+  faqSchema(faqs),
+  breadcrumbSchema([
+    { name: 'Home', url: SITE_URL },
+    { name: 'Guides', url: `${SITE_URL}/guides` },
+    { name: guide.title, url }
+  ])
+];
 
 const BaseMainnetSwapGuidePage = () => {
   return (
     <>
-      <Helmet>
-        <title>How to Swap Tokens on Base Mainnet with Low Fees | Bloxology Guide</title>
-        <meta
-          name="description"
-          content="Learn how to complete a Base Mainnet token swap with low fees. Follow this step-by-step guide, compare costs, and trade safely with Bloxology."
-        />
-        <link rel="canonical" href="https://bloxology.site/guides/base-mainnet-token-swap-low-fees" />
-        <meta property="og:title" content="How to Swap Tokens on Base Mainnet with Low Fees" />
-        <meta
-          property="og:description"
-          content="A practical guide for low fee DeFi swaps on Base network trading with safety checks and fee comparison tips."
-        />
-        <meta property="og:type" content="article" />
-        <meta property="og:url" content="https://bloxology.site/guides/base-mainnet-token-swap-low-fees" />
-        <meta property="og:image" content="https://bloxology.site/icon-512x512.svg" />
-        <meta name="twitter:card" content="summary" />
-        <meta name="twitter:title" content="How to Swap Tokens on Base Mainnet with Low Fees" />
-        <meta
-          name="twitter:description"
-          content="Step-by-step Base Mainnet token swap guide with low fee trading and security tips."
-        />
-        <meta name="twitter:image" content="https://bloxology.site/icon-512x512.svg" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(howToSchema) }} />
-      </Helmet>
+      <Seo
+        title={`${guide.title} | Bloxology Guide`}
+        description={guide.description}
+        url={url}
+        type="article"
+        schemas={schemas}
+      />
 
       <div className="min-h-screen py-24 px-4 sm:px-6 lg:px-8">
         <article className="max-w-4xl mx-auto space-y-8">
@@ -145,6 +148,20 @@ const BaseMainnetSwapGuidePage = () => {
                 <li>Confirm network, recipient token, and slippage before signing.</li>
                 <li>Never approve unlimited allowances unless you fully trust the token and dApp.</li>
               </ul>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card border-border/50">
+            <CardHeader>
+              <CardTitle>Frequently asked questions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-[var(--text-secondary)] font-medium">
+              {faqs.map((f) => (
+                <div key={f.question}>
+                  <h3 className="font-semibold text-[var(--text-primary)]">{f.question}</h3>
+                  <p>{f.answer}</p>
+                </div>
+              ))}
             </CardContent>
           </Card>
 
