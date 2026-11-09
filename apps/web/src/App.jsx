@@ -32,6 +32,7 @@ import DebugTokensPage from '@/pages/DebugTokensPage.jsx';
 import BusinessPaymentsPage from '@/pages/BusinessPaymentsPage.jsx';
 import BaseMainnetSwapGuidePage from '@/pages/BaseMainnetSwapGuidePage.jsx';
 import PartnershipsPage from '@/pages/PartnershipsPage.jsx';
+import QuestsPage from '@/pages/QuestsPage.jsx';
 
 function App() {
   return (
@@ -54,6 +55,7 @@ function App() {
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/contact" element={<ContactPage />} />
                   <Route path="/partnerships" element={<PartnershipsPage />} />
+                  <Route path="/quests" element={<QuestsPage />} />
                   <Route path="/payments" element={<BusinessPaymentsPage />} />
                   <Route path="/guides" element={<GuidesIndexPage />} />
                   <Route path="/guides/base-mainnet-token-swap-low-fees" element={<BaseMainnetSwapGuidePage />} />
