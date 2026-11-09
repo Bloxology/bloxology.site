@@ -243,6 +243,7 @@ router.get('/wallet-balances', async (req, res) => {
 
       return {
         token: token.symbol,
+        address: token.address.toLowerCase(),
         balance: balance.balance,
         price: price.price,
         value: parseFloat(balance.balance) * price.price,
@@ -251,6 +252,7 @@ router.get('/wallet-balances', async (req, res) => {
       logger.warn(`Error fetching balance for ${token.symbol}: ${error.message}`);
       return {
         token: token.symbol,
+        address: token.address.toLowerCase(),
         balance: '0',
         price: 0,
         value: 0,

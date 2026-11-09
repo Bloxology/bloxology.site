@@ -29,7 +29,7 @@ const FEATURES = [
   {
     icon: Lock,
     title: 'Token Locker',
-    description: 'Lock tokens with time-based release schedules'
+    description: 'Currently unavailable while a replacement locker is developed'
   },
   {
     icon: Shield,
@@ -53,7 +53,7 @@ const AboutPage = () => {
     <>
       <Helmet>
         <title>About - Bloxology</title>
-        <meta name="description" content="Learn about Bloxology, a Base-first DeFi app for swaps, liquidity, token locking, and portfolio tools." />
+        <meta name="description" content="Learn about Bloxology, a Base-first DeFi app for swaps, liquidity, and portfolio tools." />
       </Helmet>
 
       <div className="min-h-screen py-24 px-4 sm:px-6 lg:px-8">

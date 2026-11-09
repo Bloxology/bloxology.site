@@ -36,6 +36,50 @@ const ConnectedWalletDashboard = () => {
       
       if (result.success) {
         const balances = result.data.balances || [];
+        try {
+          const discoveryResponse = await apiServerClient.fetch(
+            `/balance?address=${encodeURIComponent(activeAddress)}&chainId=${encodeURIComponent(selectedNetwork.id)}`
+          );
+          const discoveryResult = await discoveryResponse.json();
+          if (!discoveryResponse.ok || !discoveryResult.success) {
+            throw new Error(discoveryResult.error || 'Token discovery request failed');
+          }
+          if (!Array.isArray(discoveryResult.data?.tokens)) {
+            throw new Error('Token discovery returned an invalid token list');
+          }
+
+          const knownAddresses = new Set(
+            balances.map((token) => token.address?.toLowerCase()).filter(Boolean)
+          );
+          const discoveredTokens = discoveryResult.data.tokens
+            .filter((token) => {
+              const validAddress = /^0x[a-fA-F0-9]{40}$/.test(token?.address || '');
+              const balance = Number(token?.balance);
+              if (!validAddress || typeof token.symbol !== 'string' || !Number.isFinite(balance) || balance <= 0) {
+                return false;
+              }
+
+              const address = token.address.toLowerCase();
+              if (knownAddresses.has(address)) return false;
+              knownAddresses.add(address);
+              return true;
+            })
+            .map((token) => ({
+              token: token.symbol,
+              name: token.name,
+              address: token.address.toLowerCase(),
+              balance: token.balance,
+              price: 0,
+              value: 0,
+              priceAvailable: false,
+              priceSource: 'unavailable',
+              autoDetected: true,
+            }));
+          balances.push(...discoveredTokens);
+        } catch (discoveryError) {
+          console.error('Failed to auto-detect wallet tokens:', discoveryError);
+        }
+
         const total = balances.reduce((sum, token) => sum + (parseFloat(token.value) || 0), 0);
         setPortfolioData({ balances, total });
       }
@@ -280,13 +324,16 @@ const ConnectedWalletDashboard = () => {
                         const priceBadge = getPriceBadge(token);
 
                         return (
-                        <div key={token.token} className="glass-card p-4 rounded-xl flex justify-between items-center hover:border-primary/30 transition-colors">
+                        <div key={token.address || token.token} className="glass-card p-4 rounded-xl flex justify-between items-center hover:border-primary/30 transition-colors">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm border border-white/5">
                               {token.token.slice(0,1)}
                             </div>
                             <div>
                               <p className="font-bold text-[var(--text-primary)]">{token.token}</p>
+                              {token.autoDetected && (
+                                <p className="text-[10px] text-primary">Auto-detected token</p>
+                              )}
                               <p className="text-xs text-[var(--text-secondary)] font-medium">{formatBalance(token.balance)}</p>
                               <TooltipProvider delayDuration={120}>
                                 <Tooltip>
