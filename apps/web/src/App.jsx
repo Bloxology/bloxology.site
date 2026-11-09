@@ -9,6 +9,7 @@ import { BaseAuthProvider } from '@/contexts/BaseAuthContext.jsx';
 import { wagmiConfig } from '@/lib/wagmiConfig.js';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollToTop from '@/components/ScrollToTop.jsx';
+import AnalyticsTracker from '@/components/AnalyticsTracker.jsx';
 import Header from '@/components/Header.jsx';
 import Footer from '@/components/Footer.jsx';
 import ProtectedRoute from '@/components/ProtectedRoute.jsx';
@@ -31,6 +32,7 @@ import PaymentsPage from '@/pages/PaymentsPage.jsx';
 import DebugTokensPage from '@/pages/DebugTokensPage.jsx';
 import BusinessPaymentsPage from '@/pages/BusinessPaymentsPage.jsx';
 import BaseMainnetSwapGuidePage from '@/pages/BaseMainnetSwapGuidePage.jsx';
+import GuidesIndexPage from '@/pages/GuidesIndexPage.jsx';
 import PartnershipsPage from '@/pages/PartnershipsPage.jsx';
 import QuestsPage from '@/pages/QuestsPage.jsx';
 
