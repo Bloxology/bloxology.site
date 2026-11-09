@@ -1,0 +1,6 @@
+[profile.default]
+src = "src"
+out = "out"
+test = "test"
+cache_dir = "cache"
+remappings = ["forge-std/=../lib/forge-std/src/"]

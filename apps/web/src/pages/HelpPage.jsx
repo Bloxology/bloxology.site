@@ -40,7 +40,7 @@ const FAQ_ITEMS = [
   },
   {
     question: 'How does token locking work?',
-    answer: 'Token locking allows you to lock tokens until a specific date. This is useful for vesting schedules or time-locked investments. Once locked, tokens cannot be withdrawn until the unlock date is reached.'
+    answer: 'Token locking is currently unavailable. The previous flow transferred tokens to an address without an enforceable on-chain lock; those transfers cannot be withdrawn through the app.'
   },
   {
     question: 'Are there any fees?',
@@ -69,17 +69,6 @@ const GUIDES = [
       'Specify the amount to swap',
       'Review the exchange rate and slippage',
       'Click "Swap" and confirm in your wallet'
-    ]
-  },
-  {
-    title: 'How to lock tokens',
-    steps: [
-      'Navigate to the Token Locker tab',
-      'Enter the token address you want to lock',
-      'Specify the amount to lock',
-      'Select the unlock date using the date picker',
-      'Click "Lock Tokens" and approve the transaction',
-      'Use "Check Status" to view your locked tokens'
     ]
   },
   {

@@ -13,7 +13,6 @@ const RPC_ENDPOINTS = {
 
 // Simulated liquidity pool storage
 const liquidityPools = new Map();
-const tokenLocks = new Map();
 
 // Helper function to generate transaction hash
 const generateTxHash = () => {
@@ -187,108 +186,13 @@ router.post('/swap', async (req, res) => {
 });
 
 // POST /lockTokens - Lock tokens until a future date
-router.post('/lockTokens', async (req, res) => {
-  const { tokenAddress, amount, unlockDate, walletAddress } = req.body;
-
-  // Validate required fields
-  if (!tokenAddress || !amount || !unlockDate || !walletAddress) {
-    return res.status(400).json({
-      error: 'Missing required fields: tokenAddress, amount, unlockDate, walletAddress',
-    });
-  }
-
-  // Validate addresses
-  validateAddress(tokenAddress);
-  validateAddress(walletAddress);
-
-  // Validate amount
-  const validatedAmount = validateAmount(amount);
-
-  // Validate unlockDate is in the future
-  const unlockDateTime = new Date(unlockDate).getTime();
-  const now = Date.now();
-
-  if (isNaN(unlockDateTime)) {
-    return res.status(400).json({
-      error: 'Invalid unlockDate format. Use ISO 8601 format (e.g., 2025-12-31T23:59:59Z)',
-    });
-  }
-
-  if (unlockDateTime <= now) {
-    return res.status(400).json({
-      error: 'unlockDate must be in the future',
-    });
-  }
-
-  // Simulate token lock
-  const lockKey = `${tokenAddress.toLowerCase()}-${walletAddress.toLowerCase()}`;
-  const lock = {
-    tokenAddress,
-    walletAddress,
-    amount: validatedAmount,
-    unlockDate: new Date(unlockDate).toISOString(),
-    lockedAt: new Date().toISOString(),
-    transactionHash: generateTxHash(),
-  };
-
-  tokenLocks.set(lockKey, lock);
-
-  logger.info(`Tokens locked: ${validatedAmount} of ${tokenAddress} for ${walletAddress} until ${unlockDate}`);
-
-  res.json({
-    success: true,
-    transactionHash: lock.transactionHash,
-    message: 'Tokens locked successfully',
-    amount: validatedAmount,
-    unlockDate: lock.unlockDate,
-    lockedAt: lock.lockedAt,
-  });
+router.post('/lockTokens', async (_req, res) => {
+  res.status(503).json({ success: false, error: 'Token locking is unavailable.' });
 });
 
 // GET /lockStatus - Retrieve lock status for a wallet and token
-router.get('/lockStatus', async (req, res) => {
-  const { tokenAddress, walletAddress } = req.query;
-
-  // Validate required query parameters
-  if (!tokenAddress || !walletAddress) {
-    return res.status(400).json({
-      error: 'Missing required query parameters: tokenAddress, walletAddress',
-    });
-  }
-
-  // Validate addresses
-  validateAddress(tokenAddress);
-  validateAddress(walletAddress);
-
-  // Retrieve lock status
-  const lockKey = `${tokenAddress.toLowerCase()}-${walletAddress.toLowerCase()}`;
-  const lock = tokenLocks.get(lockKey);
-
-  if (!lock) {
-    return res.json({
-      locked: false,
-      amount: null,
-      unlockDate: null,
-      timeRemaining: null,
-      message: 'No active lock found for this wallet and token',
-    });
-  }
-
-  const unlockDateTime = new Date(lock.unlockDate).getTime();
-  const now = Date.now();
-  const timeRemaining = Math.max(0, unlockDateTime - now);
-  const isLocked = timeRemaining > 0;
-
-  logger.info(`Lock status retrieved for ${tokenAddress} and ${walletAddress}`);
-
-  res.json({
-    locked: isLocked,
-    amount: lock.amount.toString(),
-    unlockDate: lock.unlockDate,
-    timeRemaining: timeRemaining,
-    lockedAt: lock.lockedAt,
-    message: 'Lock status retrieved',
-  });
+router.get('/lockStatus', async (_req, res) => {
+  res.status(503).json({ success: false, error: 'Token lock status is unavailable.' });
 });
 
 export default router;

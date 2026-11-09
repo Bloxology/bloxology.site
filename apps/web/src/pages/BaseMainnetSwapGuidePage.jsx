@@ -129,7 +129,7 @@ const BaseMainnetSwapGuidePage = () => {
               <ul className="space-y-2 list-disc list-inside">
                 <li>Base-first DeFi workflows for swaps and related tools in one app.</li>
                 <li>Simple interface for quick token pair selection and quote review.</li>
-                <li>Built-in support for broader DeFi actions like liquidity and token locking.</li>
+                <li>Access to liquidity-related tools alongside swaps.</li>
               </ul>
             </CardContent>
           </Card>
