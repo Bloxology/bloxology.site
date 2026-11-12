@@ -6,6 +6,7 @@
 - [Debug Tokens - Bloxology](/debugtokens): No description available
 - [Help Center - Bloxology](/help): Get help with Bloxology DeFi tools, FAQs, and guides
 - [Liquidity Pools - Bloxology](/liquidity): Provide liquidity to earn trading fees and rewards.
+- [Quests & Rewards - Bloxology](/quests): Learn how Bloxology quests work, prepare for your first swap, and check campaign status and reward terms.
 - [Settings - Bloxology](/settings): Manage your Bloxology preferences and wallet settings
 - [Swap Tokens - Bloxology](/swap): Swap tokens instantly with low fees and minimal slippage.
 - [Token Locker - Bloxology](/lock): Bloxology token locker availability.
