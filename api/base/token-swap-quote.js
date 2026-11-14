@@ -121,6 +121,50 @@ const parseRawAmount = (value) => {
   return null;
 };
 
+// NOTE: previously accidentally nested inside parseRawAmount(), which made it unreachable
+// (ReferenceError) everywhere the handler called it. Moved to module scope.
+const enrichQuoteMetrics = async ({ quote, amount, fromToken, toToken, chainId }) => {
+  const platform = CHAIN_ID_TO_COINGECKO_PLATFORM[Number(chainId)] || 'base';
+  const nativeAddress = Number(chainId) === 1
+    ? '0xc02aa39b223fe8d0a0e5c4f27ead9083c756cc2'
+    : '0x4200000000000000000000000000000000000006';
+
+  try {
+    const [fromPrice, toPrice, nativePrice] = await Promise.all([
+      getUsdPrice(fromToken, platform),
+      getUsdPrice(toToken, platform),
+      getUsdPrice(nativeAddress, platform),
+    ]);
+    const inputUsd = Number(amount) * fromPrice.value;
+    const outputUsd = Number(quote.outputAmount || 0) * toPrice.value;
+    const priceImpact = inputUsd > 0 && outputUsd >= 0
+      ? Math.max(0, (1 - (outputUsd / inputUsd)) * 100)
+      : Number(quote.slippage || 0);
+    const transaction = quote.execution?.transaction;
+    const gasUnits = Number(transaction?.gas || transaction?.gasLimit);
+    const gasPriceWei = Number(transaction?.gasPrice);
+    const estimatedGasEth = Number.isFinite(gasUnits) && Number.isFinite(gasPriceWei) && gasPriceWei > 0
+      ? (gasUnits * gasPriceWei) / 1e18
+      : 0.00015;
+
+    return {
+      ...quote,
+      gasFee: estimatedGasEth.toFixed(6),
+      priceImpact: priceImpact.toFixed(2),
+      slippage: priceImpact.toFixed(2),
+      fromUsd: fromPrice.value,
+      toUsd: toPrice.value,
+      estimatedGasUsd: Number((estimatedGasEth * nativePrice.value).toFixed(2)),
+      pricing: {
+        fromTokenSource: fromPrice.source,
+        toTokenSource: toPrice.source,
+      },
+    };
+  } catch (_) {
+    return quote;
+  }
+};
+
 const requestAlchemyQuote = async (quoteParams) => {
   const response = await fetch(`https://api.g.alchemy.com/v2/${ALCHEMY_API_KEY}`, {
     method: 'POST',
@@ -340,9 +384,27 @@ const fetchOdosQuote = async ({ fromAddress, fromToken, toToken, amount, chainId
   };
 };
 
+const UNISWAP_API_BASE = 'https://trade-api.gateway.uniswap.org/v1';
+// Uniswap's Trading API represents native ETH as the zero address, not WETH or the
+// 0xeeee.. alias used by Alchemy/Odos.
+const UNISWAP_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
+
+const buildUniswapHeaders = () => ({
+  'Content-Type': 'application/json',
+  'x-api-key': UNISWAP_API_KEY,
+  'x-universal-router-version': '2.0',
+  // decision_origin is 'human_mediated' because every swap still requires an explicit
+  // button click + wallet signature in the UI before anything is broadcast.
+  'x-agent-info': JSON.stringify({
+    integration_name: 'bloxology-token-swap',
+    decision_origin: 'human_mediated',
+    version: '1.6.0',
+  }),
+});
+
 const fetchUniswapQuote = async ({ fromAddress, fromToken, toToken, amount, chainId }) => {
   if (!UNISWAP_API_KEY || String(UNISWAP_API_KEY).includes('YOUR_UNISWAP_API_KEY')) {
-    throw new Error('Uniswap fallback unavailable: UNISWAP_API_KEY is not configured');
+    throw new Error('Uniswap quote unavailable: UNISWAP_API_KEY is not configured');
   }
 
   const fromTokenLower = fromToken.toLowerCase();
@@ -351,24 +413,53 @@ const fetchUniswapQuote = async ({ fromAddress, fromToken, toToken, amount, chai
   const toDecimals = TOKEN_DECIMALS[toTokenLower] ?? 18;
   const sellAmountRaw = toAmountRaw(amount, fromDecimals).toString();
 
-  const quoteResponse = await fetch('https://trade-api.gateway.uniswap.org/v1/quote', {
+  const uniswapFromToken = isWrappedNative(fromToken, chainId) ? UNISWAP_NATIVE_TOKEN : fromToken;
+  const uniswapToToken = isWrappedNative(toToken, chainId) ? UNISWAP_NATIVE_TOKEN : toToken;
+  const isNativeInput = uniswapFromToken === UNISWAP_NATIVE_TOKEN;
+
+  // Step 1: /check_approval — skipped for native ETH input, which needs no token approval.
+  let approvalCall = null;
+  if (!isNativeInput) {
+    const approvalResponse = await fetch(`${UNISWAP_API_BASE}/check_approval`, {
+      method: 'POST',
+      headers: buildUniswapHeaders(),
+      body: JSON.stringify({
+        walletAddress: fromAddress,
+        token: uniswapFromToken,
+        amount: sellAmountRaw,
+        chainId: Number(chainId),
+      }),
+    });
+    const approvalPayload = await approvalResponse.json().catch(() => ({}));
+    if (!approvalResponse.ok) {
+      throw new Error(approvalPayload?.detail || approvalPayload?.errorCode || `Uniswap check_approval failed: ${approvalResponse.status}`);
+    }
+    if (approvalPayload?.approval) {
+      approvalCall = {
+        to: approvalPayload.approval.to,
+        data: approvalPayload.approval.data,
+        value: approvalPayload.approval.value || '0x0',
+      };
+    }
+  }
+
+  // Step 2: /quote — routingPreference is forced to CLASSIC. UniswapX (DUTCH_V2/V3/PRIORITY)
+  // and Permit2-signature swaps both require an off-chain EIP-712 signature step that this
+  // integration's transaction-only execution model does not support yet, so those are
+  // intentionally rejected below rather than producing a broken/unsigned transaction.
+  const quoteResponse = await fetch(`${UNISWAP_API_BASE}/quote`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': UNISWAP_API_KEY,
-    },
+    headers: buildUniswapHeaders(),
     body: JSON.stringify({
       type: 'EXACT_INPUT',
       amount: sellAmountRaw,
       tokenInChainId: Number(chainId),
       tokenOutChainId: Number(chainId),
-      tokenIn: fromToken,
-      tokenOut: toToken,
+      tokenIn: uniswapFromToken,
+      tokenOut: uniswapToToken,
       swapper: fromAddress,
-      recipient: fromAddress,
       slippageTolerance: 1,
-      urgency: 'normal',
-      protocols: ['V2', 'V3', 'MIXED'],
+      routingPreference: 'CLASSIC',
     }),
   });
 
@@ -377,15 +468,49 @@ const fetchUniswapQuote = async ({ fromAddress, fromToken, toToken, amount, chai
     throw new Error(quotePayload?.detail || quotePayload?.errorCode || `Uniswap quote request failed: ${quoteResponse.status}`);
   }
 
-  const quote = quotePayload?.quote || {};
-  const methodParameters = quote?.methodParameters || quotePayload?.methodParameters;
-  if (!methodParameters?.to || !methodParameters?.calldata) {
-    throw new Error('Uniswap quote did not return executable methodParameters');
+  if (quotePayload?.routing && quotePayload.routing !== 'CLASSIC') {
+    throw new Error(`Uniswap returned unsupported routing type: ${quotePayload.routing}`);
+  }
+  if (quotePayload?.permitData && typeof quotePayload.permitData === 'object') {
+    throw new Error('Uniswap quote requires a Permit2 signature flow, which is not supported yet');
   }
 
-  const buyAmountRaw = parseRawAmount(quote?.output?.amount);
-  const outputAmount = buyAmountRaw != null ? formatUnits(buyAmountRaw, toDecimals, 9) : '0';
+  const outputAmountRaw = parseRawAmount(quotePayload?.quote?.output?.amount);
+  if (outputAmountRaw == null) {
+    throw new Error('Uniswap quote did not return an output amount');
+  }
+  const outputAmount = formatUnits(outputAmountRaw, toDecimals, 9);
   const exchangeRate = Number(amount) > 0 && Number(outputAmount) > 0 ? Number(outputAmount) / Number(amount) : 0;
+
+  // Step 3: /swap — the quote response is spread directly into the body (never wrapped),
+  // with permitData/permitTransaction stripped since we already rejected Permit2 flows above.
+  const { permitData, permitTransaction, ...swapRequestBody } = quotePayload;
+  const swapResponse = await fetch(`${UNISWAP_API_BASE}/swap`, {
+    method: 'POST',
+    headers: buildUniswapHeaders(),
+    body: JSON.stringify(swapRequestBody),
+  });
+
+  const swapPayload = await swapResponse.json().catch(() => ({}));
+  if (!swapResponse.ok) {
+    throw new Error(swapPayload?.detail || swapPayload?.errorCode || `Uniswap swap request failed: ${swapResponse.status}`);
+  }
+
+  const swapTx = swapPayload?.swap;
+  if (!swapTx?.to || !swapTx?.data) {
+    throw new Error('Uniswap swap did not return an executable transaction');
+  }
+
+  const swapCall = {
+    to: swapTx.to,
+    data: swapTx.data,
+    value: swapTx.value || '0x0',
+    gas: swapTx.gasLimit,
+  };
+
+  const execution = approvalCall
+    ? { type: 'calls', calls: [approvalCall, swapCall] }
+    : { type: 'transaction', transaction: swapCall };
 
   return {
     outputAmount,
@@ -402,15 +527,7 @@ const fetchUniswapQuote = async ({ fromAddress, fromToken, toToken, amount, chai
       toTokenSource: 'uniswap-quote',
     },
     provider: 'uniswap',
-    execution: {
-      type: 'transaction',
-      transaction: {
-        to: methodParameters.to,
-        data: methodParameters.calldata,
-        value: methodParameters.value || '0x0',
-        gasLimit: quote?.gasUseEstimate ? `0x${Number(quote.gasUseEstimate).toString(16)}` : undefined,
-      },
-    },
+    execution,
   };
 };
 
@@ -543,68 +660,68 @@ module.exports = async function handler(req, res) {
         }
       }
 
-      // --- Primary: LI.FI / Blockscout swap API ---
-      const lifiRetryErrors = [];
-      for (const bps of retryBpsSteps) {
-        const retryAmount = buildRetryAmount(bps);
-        if (!retryAmount) continue;
-        try {
-          const lifiQuote = await fetchLifiQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId });
-          if (lifiQuote) {
-            return json(res, 200, {
-              success: true,
-              data: {
-                ...lifiQuote,
-                requestedAmount: amount,
-                adjustedAmount: retryAmount,
-                autoAdjusted: retryAmount !== amount,
-              },
-              error: null,
-            });
-          }
-        } catch (lifiError) {
-          lifiRetryErrors.push(`LI.FI ${retryAmount}: ${String(lifiError?.message || lifiError)}`);
-        }
-      }
-      console.error('[token-swap-quote] lifi primary failed', {
-        requestId,
-        chainId: Number(chainId),
-        fromToken,
-        toToken,
-        amount,
-        errors: lifiRetryErrors,
-      });
-
-      // --- Fallback: ODOS ---
+      // --- Primary: ODOS + Uniswap in parallel, pick the better price ---
+      // Both providers are queried at each retry-amount step; whichever returns the higher
+      // netOutputAmount wins. Only falls through to the next (smaller) amount step if both
+      // fail, and only falls through to Alchemy if both fail at every amount step.
       const odosRetryErrors = [];
+      const uniswapRetryErrors = [];
+      const uniswapEnabled = UNISWAP_API_KEY && !String(UNISWAP_API_KEY).includes('YOUR_UNISWAP_API_KEY');
+
       for (const bps of retryBpsSteps) {
         const retryAmount = buildRetryAmount(bps);
         if (!retryAmount) continue;
-        try {
-          const odosQuote = await fetchOdosQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId });
-          if (odosQuote) {
-            return json(res, 200, {
-              success: true,
-              data: {
-                ...odosQuote,
-                requestedAmount: amount,
-                adjustedAmount: retryAmount,
-                autoAdjusted: retryAmount !== amount,
-              },
-              error: null,
-            });
-          }
-        } catch (odosError) {
-          odosRetryErrors.push(`ODOS ${retryAmount}: ${String(odosError?.message || odosError)}`);
+
+        const [odosResult, uniswapResult] = await Promise.allSettled([
+          fetchOdosQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId }),
+          uniswapEnabled
+            ? fetchUniswapQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId })
+            : Promise.reject(new Error('Uniswap quote skipped: UNISWAP_API_KEY is not configured')),
+        ]);
+
+        if (odosResult.status === 'rejected') {
+          odosRetryErrors.push(`ODOS ${retryAmount}: ${String(odosResult.reason?.message || odosResult.reason)}`);
+        }
+        if (uniswapResult.status === 'rejected') {
+          uniswapRetryErrors.push(`Uniswap ${retryAmount}: ${String(uniswapResult.reason?.message || uniswapResult.reason)}`);
+        }
+
+        const candidates = [
+          odosResult.status === 'fulfilled' ? odosResult.value : null,
+          uniswapResult.status === 'fulfilled' ? uniswapResult.value : null,
+        ].filter(Boolean);
+
+        if (candidates.length > 0) {
+          const bestQuote = candidates.reduce((best, candidate) =>
+            Number(candidate.netOutputAmount) > Number(best.netOutputAmount) ? candidate : best
+          );
+          const enrichedQuote = await enrichQuoteMetrics({
+            quote: bestQuote,
+            amount: retryAmount,
+            fromToken,
+            toToken,
+            chainId,
+          });
+          return json(res, 200, {
+            success: true,
+            data: {
+              ...enrichedQuote,
+              requestedAmount: amount,
+              adjustedAmount: retryAmount,
+              autoAdjusted: retryAmount !== amount,
+            },
+            error: null,
+          });
         }
       }
-      console.error('[token-swap-quote] odos fallback failed', {
+      console.error('[token-swap-quote] odos/uniswap primary failed', {
         requestId,
         chainId: Number(chainId),
         fromToken,
         toToken,
         amount,
-        errors: odosRetryErrors,
+        odosErrors: odosRetryErrors,
+        uniswapErrors: uniswapRetryErrors,
       });
 
       // --- Fallback: Alchemy swap API ---
@@ -616,10 +733,17 @@ module.exports = async function handler(req, res) {
           try {
             const alchemyQuote = await fetchAlchemyQuote({ fromAddress: quoteAddress, fromToken, toToken, amount: retryAmount, chainId });
             if (alchemyQuote) {
+              const enrichedQuote = await enrichQuoteMetrics({
+                quote: alchemyQuote,
+                amount: retryAmount,
+                fromToken,
+                toToken,
+                chainId,
+              });
               return json(res, 200, {
                 success: true,
                 data: {
-                  ...alchemyQuote,
+                  ...enrichedQuote,
                   requestedAmount: amount,
                   adjustedAmount: retryAmount,
                   autoAdjusted: retryAmount !== amount,
@@ -645,10 +769,11 @@ module.exports = async function handler(req, res) {
         success: false,
         data: null,
         errorCode: 'EXECUTION_UNAVAILABLE',
-        error: `No executable route for this token pair and amount right now. Try a different amount or token pair. Ref: ${requestId}. ${lifiRetryErrors.length ? `LI.FI attempts: ${lifiRetryErrors.join(' | ')}.` : ''} ${odosRetryErrors.length ? `ODOS attempts: ${odosRetryErrors.join(' | ')}.` : ''} ${alchemyRetryErrors.length ? `Alchemy attempts: ${alchemyRetryErrors.join(' | ')}.` : ''}`,
+        error: `No executable route for this token pair and amount right now. Try a different amount or token pair. Ref: ${requestId}. ${odosRetryErrors.length ? `ODOS attempts: ${odosRetryErrors.join(' | ')}.` : ''} ${uniswapRetryErrors.length ? `Uniswap attempts: ${uniswapRetryErrors.join(' | ')}.` : ''} ${alchemyRetryErrors.length ? `Alchemy attempts: ${alchemyRetryErrors.join(' | ')}.` : ''}`,
         providerErrors: {
           lifi: lifiRetryErrors,
           odos: odosRetryErrors,
+          uniswap: uniswapRetryErrors,
           alchemy: alchemyRetryErrors,
         },
       });
@@ -689,6 +814,7 @@ module.exports = async function handler(req, res) {
         netOutputAmount: (netOutput - feeAmount).toFixed(6),
         exchangeRate: exchangeRate.toFixed(6),
         gasFee: estimatedGasEth.toFixed(6),
+        priceImpact: priceImpactPercent.toFixed(2),
         slippage: priceImpactPercent.toFixed(2),
         fromUsd: fromPrice.value,
         toUsd: toPrice.value,

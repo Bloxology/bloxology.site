@@ -3,6 +3,7 @@ import healthCheck from './health-check.js';
 import balanceRouter from './balance.js';
 import defiRouter from './defi.js';
 import priceChartRouter from './price-chart.js';
+import cryptoRouter from './crypto.js';
 import contactRouter from './contact.js';
 import baseRouter from './base.js';
 import authRouter from './auth.js';
@@ -18,6 +19,7 @@ export default () => {
     router.use('/balance', balanceRouter);
     router.use('/defi', defiRouter);
     router.use('/price-chart', priceChartRouter);
+    router.use('/crypto', cryptoRouter);
     router.use('/contact', contactRouter);
     router.use('/base', baseRouter);
     router.use('/auth', authRouter);

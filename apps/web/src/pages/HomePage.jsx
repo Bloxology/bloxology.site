@@ -23,11 +23,11 @@ const HomePage = () => {
         <title>Bloxology | Base DeFi App</title>
         <meta
           name="description"
-          content="Bloxology is a Base-first DeFi app for token swaps, liquidity tools, token locking, and portfolio management."
+          content="Bloxology is a Base-first DeFi app for token swaps, liquidity tools, and portfolio management."
         />
         <link rel="canonical" href="https://bloxology.site/" />
         <meta property="og:title" content="Bloxology | Base DeFi App" />
-        <meta property="og:description" content="Swap tokens, explore liquidity, lock assets, and manage your portfolio on Base with Bloxology." />
+        <meta property="og:description" content="Swap tokens, explore liquidity, and manage your portfolio on Base with Bloxology." />
         <meta property="og:url" content="https://bloxology.site/" />
       </Helmet>
 

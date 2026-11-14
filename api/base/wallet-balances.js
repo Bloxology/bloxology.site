@@ -37,6 +37,7 @@ module.exports = async function handler(req, res) {
 
           return {
             token: token.symbol,
+            address: token.address.toLowerCase(),
             balance: balanceResult.balance,
             price: Number(usdPrice.value.toFixed(6)),
             value,
@@ -46,6 +47,7 @@ module.exports = async function handler(req, res) {
         } catch (_) {
           return {
             token: token.symbol,
+            address: token.address.toLowerCase(),
             balance: '0',
             price: 0,
             value: 0,

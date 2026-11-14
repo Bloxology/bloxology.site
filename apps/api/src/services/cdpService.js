@@ -167,11 +167,19 @@ const getTokenBalances = async (address, chainId) => {
   if (cached) return cached;
 
   try {
-    const data = await makeCdpCall(
-      `/platform/v1/networks/${networkId}/addresses/${address}/balances`
-    );
+    // Paginate through all pages of balances (CDP returns has_more/next_page)
+    const rawBalances = [];
+    let nextPage;
+    do {
+      const path = `/platform/v1/networks/${networkId}/addresses/${address}/balances${
+        nextPage ? `?page=${encodeURIComponent(nextPage)}` : ''
+      }`;
+      const data = await makeCdpCall(path);
+      rawBalances.push(...(data.balances || data.data || []));
+      nextPage = data.has_more ? data.next_page : null;
+    } while (nextPage);
 
-    const balances = (data.balances || data.data || [])
+    const balances = rawBalances
       .filter(b => b.asset?.type === 'erc20' || b.asset?.asset_id !== 'eth')
       .map(b => {
         const decimals = b.asset?.decimals || 18;
