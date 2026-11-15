@@ -3,6 +3,8 @@ const { formatUnits, getUsdPrice, getErc20Balance, CHAIN_ID_TO_COINGECKO_PLATFOR
 const ALCHEMY_API_KEY = process.env.ALCHEMY_API_KEY;
 const UNISWAP_API_KEY = process.env.UNISWAP_API_KEY;
 const ODOS_API_KEY = process.env.ODOS_API_KEY;
+const LIFI_API_BASE = 'https://li.quest/v1';
+const LIFI_INTEGRATOR = 'blockscout';
 const SWAP_FEE_BPS = 40;
 const NATIVE_TOKEN_ALIAS = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
 const ODOS_NATIVE_TOKEN = '0x0000000000000000000000000000000000000000';
@@ -189,6 +191,90 @@ const requestAlchemyQuote = async (quoteParams) => {
   }
 
   return payload.result;
+};
+
+const fetchLifiQuote = async ({ fromAddress, fromToken, toToken, amount, chainId }) => {
+  const fromTokenLower = fromToken.toLowerCase();
+  const toTokenLower = toToken.toLowerCase();
+  const fromDecimals = TOKEN_DECIMALS[fromTokenLower] ?? 18;
+  const toDecimals = TOKEN_DECIMALS[toTokenLower] ?? 18;
+  const fromAmountRaw = toAmountRaw(amount, fromDecimals).toString();
+
+  // LI.FI uses the native alias for ETH on all chains
+  const lifiFromToken = isWrappedNative(fromToken, chainId) ? NATIVE_TOKEN_ALIAS : fromToken;
+  const lifiToToken = isWrappedNative(toToken, chainId) ? NATIVE_TOKEN_ALIAS : toToken;
+
+  const params = new URLSearchParams({
+    fromChain: String(Number(chainId)),
+    toChain: String(Number(chainId)),
+    fromToken: lifiFromToken,
+    toToken: lifiToToken,
+    fromAmount: fromAmountRaw,
+    slippage: '0.005',
+    integrator: LIFI_INTEGRATOR,
+  });
+
+  if (fromAddress) {
+    params.set('fromAddress', fromAddress);
+  }
+
+  const quoteResponse = await fetch(`${LIFI_API_BASE}/quote?${params.toString()}`, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+
+  const quotePayload = await quoteResponse.json().catch(() => ({}));
+  if (!quoteResponse.ok) {
+    throw new Error(quotePayload?.message || `LI.FI quote request failed: ${quoteResponse.status}`);
+  }
+
+  const txRequest = quotePayload?.transactionRequest;
+  if (!txRequest || !txRequest.to || !txRequest.data) {
+    throw new Error('LI.FI quote did not return executable transactionRequest');
+  }
+
+  const toAmountRawValue = quotePayload?.estimate?.toAmount
+    || quotePayload?.estimate?.toAmountMin
+    || quotePayload?.toAmount;
+
+  let outputAmount = '0';
+  if (toAmountRawValue) {
+    try {
+      outputAmount = formatUnits(BigInt(String(toAmountRawValue)), toDecimals, 9);
+    } catch (_) {
+      outputAmount = '0';
+    }
+  }
+
+  const exchangeRate = Number(amount) > 0 && Number(outputAmount) > 0
+    ? Number(outputAmount) / Number(amount)
+    : 0;
+
+  return {
+    outputAmount,
+    feeAmount: '0',
+    netOutputAmount: outputAmount,
+    exchangeRate: Number.isFinite(exchangeRate) ? exchangeRate.toFixed(9) : '0',
+    gasFee: '0',
+    slippage: '0.50',
+    fromUsd: null,
+    toUsd: null,
+    estimatedGasUsd: null,
+    pricing: {
+      fromTokenSource: 'lifi-quote',
+      toTokenSource: 'lifi-quote',
+    },
+    provider: 'lifi',
+    execution: {
+      type: 'transaction',
+      transaction: {
+        to: txRequest.to,
+        data: txRequest.data,
+        value: txRequest.value || '0x0',
+        gasLimit: txRequest.gasLimit || txRequest.gas,
+      },
+    },
+  };
 };
 
 const fetchOdosQuote = async ({ fromAddress, fromToken, toToken, amount, chainId }) => {
@@ -685,6 +771,7 @@ module.exports = async function handler(req, res) {
         errorCode: 'EXECUTION_UNAVAILABLE',
         error: `No executable route for this token pair and amount right now. Try a different amount or token pair. Ref: ${requestId}. ${odosRetryErrors.length ? `ODOS attempts: ${odosRetryErrors.join(' | ')}.` : ''} ${uniswapRetryErrors.length ? `Uniswap attempts: ${uniswapRetryErrors.join(' | ')}.` : ''} ${alchemyRetryErrors.length ? `Alchemy attempts: ${alchemyRetryErrors.join(' | ')}.` : ''}`,
         providerErrors: {
+          lifi: lifiRetryErrors,
           odos: odosRetryErrors,
           uniswap: uniswapRetryErrors,
           alchemy: alchemyRetryErrors,
