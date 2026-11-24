@@ -43,6 +43,18 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://bloxology.site/blog</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://bloxology.site/docs</loc>
+    <lastmod>2026-11-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://bloxology.site/guides/base-mainnet-token-swap-low-fees</loc>
     <lastmod>2026-09-26</lastmod>
     <changefreq>weekly</changefreq>
