@@ -52,6 +52,9 @@ const Footer = () => {
                 <Link to="/guides/base-mainnet-token-swap-low-fees" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
                   Base Swap Guide
                 </Link>
+                <Link to="/guides/understanding-token-swaps-and-liquidity" className="text-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-200">
+                  Token Swaps &amp; Liquidity
+                </Link>
               </div>
             </div>
 
