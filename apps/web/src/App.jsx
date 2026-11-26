@@ -37,6 +37,7 @@ import PartnershipsPage from '@/pages/PartnershipsPage.jsx';
 import QuestsPage from '@/pages/QuestsPage.jsx';
 import BlogPage from '@/pages/BlogPage.jsx';
 import DocumentationPage from '@/pages/DocumentationPage.jsx';
+import UnderstandingTokenSwapsLiquidityPage from '@/pages/UnderstandingTokenSwapsLiquidityPage.jsx';
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
                   <Route path="/payments" element={<BusinessPaymentsPage />} />
                   <Route path="/guides" element={<GuidesIndexPage />} />
                   <Route path="/guides/base-mainnet-token-swap-low-fees" element={<BaseMainnetSwapGuidePage />} />
+                  <Route path="/guides/understanding-token-swaps-and-liquidity" element={<UnderstandingTokenSwapsLiquidityPage />} />
                   <Route path="/blog" element={<BlogPage />} />
                   <Route path="/docs" element={<DocumentationPage />} />
                   

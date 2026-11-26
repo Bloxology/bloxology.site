@@ -13,6 +13,15 @@ export const guides = [
     dateModified: '2026-09-26',
     category: 'Base Mainnet Guide',
   },
+  {
+    slug: 'understanding-token-swaps-and-liquidity',
+    title: 'Understanding Token Swaps and Liquidity',
+    description:
+      'Learn how decentralized token swaps and liquidity pools work, what affects your execution price, and how to assess risks before trading or providing liquidity.',
+    datePublished: '2026-11-26',
+    dateModified: '2026-11-26',
+    category: 'DeFi Fundamentals',
+  },
 ];
 
 export const guidePath = (slug) => `/guides/${slug}`;
